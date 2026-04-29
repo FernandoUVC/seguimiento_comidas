@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro Nutricional v19 - Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ... Mantengo todos tus estilos originales intactos ... */
+:root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2435;--border:#2a3045;--text:#e8eaf0;--muted:#6b7280;--green:#4ade80;--green-bg:#052e16;--yellow:#fbbf24;--yellow-bg:#1c1400;--red:#f87171;--red-bg:#2d0a0a;--blue:#60a5fa;--blue-bg:#0a1628;--purple:#c084fc;--purple-bg:#1a0a2e;--orange:#fb923c;--accent:#4ade80;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;}
+.hero{background:linear-gradient(135deg,#0f1117 0%,#1a2440 50%,#0f1117 100%);border-bottom:1px solid var(--border);padding:2.5rem 1.25rem 2rem;text-align:center;}
+.hero-tag{display:inline-block;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:1rem;}
+.hero h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:600;color:#fff;margin-bottom:.4rem;}
+.hero p{color:var(--muted);font-size:13px;}
+.download-btn{display:inline-flex;align-items:center;gap:8px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:var(--green);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;margin-top:1.2rem;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.download-btn:hover{background:rgba(74,222,128,.2);}
+.nav-scroll{overflow-x:auto;display:flex;gap:8px;padding:1rem 1.25rem;border-bottom:1px solid var(--border);scrollbar-width:none;background:var(--surface);position:sticky;top:0;z-index:100;}
+.nav-scroll::-webkit-scrollbar{display:none;}
+.nav-pill{flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;text-decoration:none;}
+.nav-pill:hover,.nav-pill.active{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.4);color:var(--green);}
+main{padding:1.25rem;max-width:680px;margin:0 auto;}
+.section-header{display:flex;align-items:center;gap:10px;margin:2rem 0 1rem;}
+.section-header h2{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:600;color:#fff;}
+.section-line{flex:1;height:1px;background:var(--border);}
+.context-grid{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+.context-row{display:grid;grid-template-columns:1fr 2fr;border-bottom:1px solid var(--border);}
+.context-row:last-child{border-bottom:none;}
+.context-cell{padding:10px 14px;font-size:13px;}
+.context-cell:first-child{border-right:1px solid var(--border);color:var(--muted);font-weight:500;}
+.day-section{margin-bottom:2.5rem;}
+.day-label{display:inline-flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--muted);margin-bottom:1rem;font-weight:500;}
+.day-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.meal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1rem;}
+.meal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.meal-header-left{display:flex;align-items:center;gap:10px;}
+.meal-icon{font-size:1.2rem;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:8px;flex-shrink:0;}
+.meal-title{font-weight:500;font-size:14px;color:#fff;}
+.meal-time{font-size:11px;color:var(--muted);margin-top:1px;}
+.meal-chevron{color:var(--muted);font-size:12px;transition:transform .3s;}
+.meal-card.open .meal-chevron{transform:rotate(180deg);}
+.meal-body{display:none;padding:14px 16px;}
+.meal-card.open .meal-body{display:block;}
+.food-list{margin-bottom:1rem;}
+.food-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04);}
+.food-item:last-child{border-bottom:none;}
+.food-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:7px;flex-shrink:0;}
+.tag-section-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:12px 0 8px;}
+.tag-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;}
+.tag.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+.tag.warn{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(251,191,36,.2);}
+.tag.bad{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.tag.purple{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(192,132,252,.2);}
+.tag.ctx{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.note{background:rgba(251,191,36,.06);border-left:3px solid var(--yellow);border-radius:0 8px 8px 0;padding:10px 12px;font-size:12px;color:var(--muted);margin:10px 0;}
+.note.good{background:rgba(74,222,128,.06);border-color:var(--green);}
+.note.info{background:rgba(96,165,250,.06);border-color:var(--blue);}
+.resumen-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem;}
+.resumen-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.resumen-row-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;}
+.resumen-cat{font-weight:500;font-size:13px;}
+.resumen-days{display:flex;gap:5px;flex-wrap:wrap;}
+.resumen-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-gray{background:var(--surface2);color:var(--muted);}
+.resumen-note{font-size:11px;color:var(--muted);}
+.auto-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05);}
+.stat-pill{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.stat-pill.red{background:rgba(248,113,113,.08);color:var(--red);border-color:rgba(248,113,113,.2);}
+.stat-pill.green{background:rgba(74,222,128,.08);color:var(--green);border-color:rgba(74,222,128,.2);}
+.stat-pill.yellow{background:rgba(251,191,36,.08);color:var(--yellow);border-color:rgba(251,191,36,.2);}
+.alert-list{display:flex;flex-direction:column;gap:8px;margin-bottom:2rem;}
+.alert-item{display:flex;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;}
+.alert-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.alert-text strong{display:block;font-weight:500;margin-bottom:2px;}
+.alert-text span{color:var(--muted);font-size:12px;}
+.consejo-list{display:flex;flex-direction:column;gap:8px;margin-bottom:2rem;}
+.consejo-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;display:flex;gap:10px;}
+.consejo-emoji{font-size:1.1rem;flex-shrink:0;}
+footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border);color:var(--muted);font-size:12px;}
+.secondary-nav{overflow-x:auto;display:flex;gap:6px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);scrollbar-width:none;background:var(--surface);position:sticky;top:0;z-index:100;align-items:center;}
+.secondary-nav::-webkit-scrollbar{display:none;}
+.nav-divider{width:1px;height:14px;background:var(--border);flex-shrink:0;margin:0 2px;}
+.sec-pill{flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;text-decoration:none;font-family:'DM Sans',sans-serif;}
+.sec-pill:hover,.sec-pill.active{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.4);color:var(--green);}
+.cal-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.25rem 1.2rem;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;}
+.cal-mes{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:#fff;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:320px;margin:0 auto;}
+.cal-dayname{text-align:center;font-size:10px;font-weight:500;color:var(--muted);padding:2px 0;letter-spacing:.06em;text-transform:uppercase;}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:12px;font-weight:500;color:var(--surface2);}
+.cal-day.has-data{background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;}
+.cal-day.has-data:hover{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.35);color:var(--green);}
+.cal-day.selected{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.55);color:var(--green);font-weight:700;}
+.empty-state{text-align:center;padding:3rem 1.25rem;color:var(--muted);font-size:13px;}
+.empty-state span{font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4;}
+.cal-arrow{background:none;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1.3rem;line-height:1;transition:all .2s;}
+.cal-arrow:hover{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.4);color:var(--green);}
+.cal-arrow:disabled{opacity:.25;cursor:default;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag" id="hero-tag">Cargando datos...</div>
+  <h1>Registro Nutricional</h1>
+  <p id="hero-meta">Conectando con Google Sheets...</p>
+  <a class="download-btn" href="#" onclick="exportCSV();return false;">&#x2B07; Exportar CSV</a>
+</div>
+
+<nav class="secondary-nav">
+  <button class="sec-pill active" data-view="dia">📅 Día</button>
+  <div class="nav-divider"></div>
+  <button class="sec-pill" data-view="semana">Semana</button>
+  <button class="sec-pill" data-view="mes">Mes</button>
+  <div class="nav-divider"></div>
+  <button class="sec-pill" data-view="contexto">Contexto</button>
+  <button class="sec-pill" data-view="alertas">Alertas</button>
+  <button class="sec-pill" data-view="consejos">Consejos</button>
+</nav>
+
+<div class="cal-wrap" id="cal-wrap">
+  <div class="cal-header"><button class="cal-arrow" id="cal-prev" onclick="calNavMes(-1)">&#x2039;</button><span class="cal-mes" id="cal-mes-label"></span><button class="cal-arrow" id="cal-next" onclick="calNavMes(1)">&#x203A;</button></div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
+
+<main id="app"></main>
+
+<footer>
+  <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; v19 · Live GitHub Pages</p>
+</footer>
+
+<script>
+// --- CONFIGURACIÓN DE FUENTE DE DATOS ---
+// URL de publicación que proporcionaste
+const SHEET_CSV_PUB = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
+
+const TAG_CATALOG = {
+  proteina:               { label: "Proteína",               cat: "macro"     },
+  carbohidratos_integrales:{ label: "Carbohidratos integrales", cat: "macro"  },
+  grasas_saludables:      { label: "Grasas saludables",       cat: "macro"    },
+  grasas_mono:            { label: "Grasas monoinsaturadas",  cat: "macro"    },
+  fibra:                  { label: "Fibra",                   cat: "macro"    },
+  omega3:                 { label: "Omega-3",                 cat: "macro"    },
+  vitamina_a:             { label: "Vitamina A",              cat: "vitamina" },
+  vitamina_b6:            { label: "Vitamina B6",             cat: "vitamina" },
+  vitamina_b12:           { label: "Vitamina B12",            cat: "vitamina" },
+  vitamina_c:             { label: "Vitamina C",              cat: "vitamina" },
+  vitamina_d:             { label: "Vitamina D",              cat: "vitamina" },
+  vitamina_e:             { label: "Vitamina E",              cat: "vitamina" },
+  vitamina_k:             { label: "Vitamina K",              cat: "vitamina" },
+  colina:                 { label: "Colina",                  cat: "vitamina" },
+  folato:                 { label: "Folato",                  cat: "vitamina" },
+  biotina:                { label: "Biotina",                 cat: "vitamina" },
+  vitamina_b1:            { label: "Vitamina B1",             cat: "vitamina" },
+  calcio:                 { label: "Calcio",                  cat: "mineral"  },
+  hierro_hemo:            { label: "Hierro hemo",             cat: "mineral"  },
+  hierro_vegetal:         { label: "Hierro vegetal",          cat: "mineral"  },
+  magnesio:               { label: "Magnesio",                cat: "mineral"  },
+  potasio:                { label: "Potasio",                 cat: "mineral"  },
+  selenio:                { label: "Selenio",                 cat: "mineral"  },
+  yodo:                   { label: "Yodo",                    cat: "mineral"  },
+  zinc:                   { label: "Zinc",                    cat: "mineral"  },
+  cobre:                  { label: "Cobre",                   cat: "mineral"  },
+  cromo:                  { label: "Cromo",                   cat: "mineral"  },
+  manganeso:              { label: "Manganeso",               cat: "mineral"  },
+  fosforo:                { label: "Fósforo",                 cat: "mineral"  },
+  probioticos:            { label: "Probióticos",             cat: "funcional"},
+  prebioticos:            { label: "Prebióticos",             cat: "funcional"},
+  antioxidantes:          { label: "Antioxidantes",           cat: "funcional"},
+  antiinflamatorio:       { label: "Antiinflamatorio",        cat: "funcional"},
+  hidratacion:            { label: "Hidratación",             cat: "funcional"},
+  enzimas_digestivas:     { label: "Enzimas digestivas",      cat: "funcional"},
+  polifenoles:            { label: "Polifenoles",             cat: "funcional"},
+  colageno:               { label: "Colágeno",                cat: "funcional"},
+  allicina:               { label: "Allicina",                cat: "bioactivo"},
+  capsaicina:             { label: "Capsaicina",              cat: "bioactivo"},
+  glucosinolatos:         { label: "Glucosinolatos",          cat: "bioactivo"},
+  curcumina:              { label: "Curcumina",               cat: "bioactivo"},
+  sodio_alto:             { label: "Sodio alto",              cat: "alerta"   },
+  sodio_moderado:         { label: "Sodio moderado",          cat: "alerta"   },
+  grasas_saturadas:       { label: "Grasas saturadas",        cat: "alerta"   },
+  azucar_alta:            { label: "Azúcar alta",             cat: "alerta"   },
+  sin_vegetales:          { label: "Sin vegetales",           cat: "alerta"   },
+  sin_fruta_fresca:       { label: "Sin fruta fresca",        cat: "alerta"   },
+  sin_fibra:              { label: "Sin fibra",               cat: "alerta"   },
+  sin_proteina:           { label: "Sin proteína",            cat: "alerta"   },
+  alcohol:                { label: "Alcohol",                 cat: "alerta"   },
+  ultraprocesados:        { label: "Ultraprocesados",         cat: "alerta"   },
+  fritos:                 { label: "Fritos",                  cat: "alerta"   },
+  ayuno_prolongado:       { label: "Ayuno prolongado",        cat: "alerta"   },
+  comida_elaborada:       { label: "Comida elaborada",        cat: "contexto" },
+  comida_rapida:          { label: "Comida rápida",           cat: "contexto" },
+  comida_fuera:           { label: "Comida fuera",            cat: "contexto" },
+  comida_social:          { label: "Comida social",           cat: "contexto" },
+  compartido:             { label: "Compartido",              cat: "contexto" },
+  en_ayunas:              { label: "En ayunas",               cat: "contexto" },
+  recalentado:            { label: "Recalentado",             cat: "contexto" },
+  doublex_media:          { label: "Double X · media dosis",  cat: "suplemento"},
+  doublex_completa:       { label: "Double X · dosis completa", cat: "suplemento"},
+  omega3_capsula:         { label: "Omega-3 Nutrilite · 1 cáp", cat: "suplemento"},
+  menjurje:               { label: "Menjurje Matutino",       cat: "suplemento"},
+};
+
+const DATA = {
+  meta: {
+    semana: 1,
+    periodo: "Abril 2026",
+    version: "v19",
+    actualizado: "En vivo",
+    ubicacion: "Cancún / Puerto Morelos"
+  },
+  contexto: [
+    { label: "Cena casi diaria",   valor: "Yogurt Griego Yoplait Natural + moras + semillas" },
+    { label: "Menjurje Matutino",  valor: "Aceite oliva, cúrcuma, pimienta, jengibre, vinagre sidra, matcha." },
+    { label: "Double X Nutrilite", valor: "Multivitamínico con fitoquímicos." },
+    { label: "Omega-3 Plus",       valor: "600mg totales por cápsula." }
+  ],
+  dias: [],
+  resumen: { categorias: [] }, // Se poblará dinámicamente si es necesario
+  alertas: [],
+  consejos: []
+};
+
+// Parser CSV
+function parseCSVText(text) {
+  var rows = [], row = [], cell = '', inQ = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { cell += c; }
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if (c !== '\r') { cell += c; }
+    }
+  }
+  if (cell !== '' || row.length > 0) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+function csvRowsToDias(rows) {
+  var diasMap = {}, diasOrder = [];
+  var split = function(s) {
+    if (!s || !s.trim()) return [];
+    return s.split('|').map(function(x){ return x.trim(); }).filter(Boolean);
+  };
+  // Asumimos que la fila 0 es encabezado
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r || !r[0] || !r[1]) continue;
+    var diaId = r[1].trim();
+    if (!diasMap[diaId]) {
+      diasMap[diaId] = {
+        id: diaId,
+        fecha: r[0].trim(),
+        etiqueta: (r[2] || '').trim(),
+        resumen_dia: (r[3] || '').trim(),
+        comidas: []
+      };
+      diasOrder.push(diaId);
+    }
+    diasMap[diaId].comidas.push({
+      id: (r[4] || '').trim(),
+      titulo: (r[5] || '').trim(),
+      hora: (r[6] || '').trim(),
+      icono: (r[7] || '🍽️').trim(),
+      alimentos: split(r[8]),
+      tags: {
+        cubierto:    split(r[9]),
+        atencion:    split(r[10]),
+        contexto:    split(r[11]),
+        suplementos: split(r[12])
+      },
+      nota: (r[13] && r[13].trim()) ? r[13].trim() : null
+    });
+  }
+  return diasOrder.map(function(id){ return diasMap[id]; });
+}
+
+async function cargarRegistros() {
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="empty-state"><span>⏳</span>Cargando datos desde la nube...</div>';
+  try {
+    const res = await fetch(SHEET_CSV_PUB);
+    if (!res.ok) throw new Error('No se pudo conectar con el Sheet');
+    const text = await res.text();
+    const rows = parseCSVText(text);
+    DATA.dias = csvRowsToDias(rows);
+    
+    if (DATA.dias.length > 0) {
+      const ultimaFecha = DATA.dias[DATA.dias.length-1].fecha;
+      document.getElementById("hero-meta").textContent = "Última entrada: " + ultimaFecha;
+      document.getElementById("hero-tag").textContent = "Registro Activo";
+ <nav class="secondary-nav">
+  <button class="sec-pill active" data-view="dia">📅 Día</button>
+  <div class="nav-divider"></div>
+  <button class="sec-pill" data-view="semana">Semana</button>
+  <button class="sec-pill" data-view="mes">Mes</button>
+  <div class="nav-divider"></div>
+  <button class="sec-pill" data-view="contexto">Contexto</button>
+  <button class="sec-pill" data-view="alertas">Alertas</button>
+  <button class="sec-pill" data-view="consejos">Consejos</button>
+</nav>
+
+<div class="cal-wrap" id="cal-wrap">
+  <div class="cal-header"><button class="cal-arrow" id="cal-prev" onclick="calNavMes(-1)">&#x2039;</button><span class="cal-mes" id="cal-mes-label"></span><button class="cal-arrow" id="cal-next" onclick="calNavMes(1)">&#x203A;</button></div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
+
+<main id="app"></main>
+
+<footer>
+  <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; v19 · Live GitHub Pages</p>
+</footer>
+
+<script>
+const SHEET_CSV_PUB = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
+
+const TAG_CATALOG = {
+  proteina: { label: "Proteína", cat: "macro" },
+  carbohidratos_integrales:{ label: "Carbohidratos integrales", cat: "macro" },
+  grasas_saludables: { label: "Grasas saludables", cat: "macro" },
+  grasas_mono: { label: "Grasas monoinsaturadas", cat: "macro" },
+  fibra: { label: "Fibra", cat: "macro" },
+  omega3: { label: "Omega-3", cat: "macro" },
+  vitamina_a: { label: "Vitamina A", cat: "vitamina" },
+  vitamina_b6: { label: "Vitamina B6", cat: "vitamina" },
+  vitamina_b12: { label: "Vitamina B12", cat: "vitamina" },
+  vitamina_c: { label: "Vitamina C", cat: "vitamina" },
+  vitamina_d: { label: "Vitamina D", cat: "vitamina" },
+  vitamina_e: { label: "Vitamina E", cat: "vitamina" },
+  vitamina_k: { label: "Vitamina K", cat: "vitamina" },
+  colina: { label: "Colina", cat: "vitamina" },
+  folato: { label: "Folato", cat: "vitamina" },
+  biotina: { label: "Biotina", cat: "vitamina" },
+  vitamina_b1: { label: "Vitamina B1", cat: "vitamina" },
+  calcio: { label: "Calcio", cat: "mineral" },
+  hierro_hemo: { label: "Hierro hemo", cat: "mineral" },
+  hierro_vegetal: { label: "Hierro vegetal", cat: "mineral" },
+  magnesio: { label: "Magnesio", cat: "mineral" },
+  potasio: { label: "Potasio", cat: "mineral" },
+  selenio: { label: "Selenio", cat: "mineral" },
+  yodo: { label: "Yodo", cat: "mineral" },
+  zinc: { label: "Zinc", cat: "mineral" },
+  cobre: { label: "Cobre", cat: "mineral" },
+  cromo: { label: "Cromo", cat: "mineral" },
+  manganeso: { label: "Manganeso", cat: "mineral" },
+  fosforo: { label: "Fósforo", cat: "mineral" },
+  probioticos: { label: "Probióticos", cat: "funcional"},
+  prebioticos: { label: "Prebióticos", cat: "funcional"},
+  antioxidantes: { label: "Antioxidantes", cat: "funcional"},
+  antiinflamatorio: { label: "Antiinflamatorio", cat: "funcional"},
+  hidratacion: { label: "Hidratación", cat: "funcional"},
+  enzimas_digestivas: { label: "Enzimas digestivas", cat: "funcional"},
+  polifenoles: { label: "Polifenoles", cat: "funcional"},
+  colageno: { label: "Colágeno", cat: "funcional"},
+  allicina: { label: "Allicina", cat: "bioactivo"},
+  capsaicina: { label: "Capsaicina", cat: "bioactivo"},
+  glucosinolatos: { label: "Glucosinolatos", cat: "bioactivo"},
+  curcumina: { label: "Curcumina", cat: "bioactivo"},
+  sodio_alto: { label: "Sodio alto", cat: "alerta" },
+  sodio_moderado: { label: "Sodio moderado", cat: "alerta" },
+  grasas_saturadas: { label: "Grasas saturadas", cat: "alerta" },
+  azucar_alta: { label: "Azúcar alta", cat: "alerta" },
+  sin_vegetales: { label: "Sin vegetales", cat: "alerta" },
+  sin_fruta_fresca: { label: "Sin fruta fresca", cat: "alerta" },
+  sin_fibra: { label: "Sin fibra", cat: "alerta" },
+  sin_proteina: { label: "Sin proteína", cat: "alerta" },
+  alcohol: { label: "Alcohol", cat: "alerta" },
+  ultraprocesados: { label: "Ultraprocesados", cat: "alerta" },
+  fritos: { label: "Fritos", cat: "alerta" },
+  ayuno_prolongado: { label: "Ayuno prolongado", cat: "alerta" },
+  comida_elaborada: { label: "Comida elaborada", cat: "contexto" },
+  comida_rapida: { label: "Comida rápida", cat: "contexto" },
+  comida_fuera: { label: "Comida fuera", cat: "contexto" },
+  comida_social: { label: "Comida social", cat: "contexto" },
+  compartido: { label: "Compartido", cat: "contexto" },
+  en_ayunas: { label: "En ayunas", cat: "contexto" },
+  recalentado: { label: "Recalentado", cat: "contexto" },
+  doublex_media: { label: "Double X · media dosis", cat: "suplemento"},
+  doublex_completa: { label: "Double X · dosis completa", cat: "suplemento"},
+  omega3_capsula: { label: "Omega-3 Nutrilite · 1 cáp", cat: "suplemento"},
+  menjurje: { label: "Menjurje Matutino", cat: "suplemento"},
+};
+
+const DATA = {
+  meta: { semana: 1, periodo: "Abril 2026", version: "v19", actualizado: "En vivo" },
+  dias: []
+};
+
+function parseCSVText(text) {
+  var rows = [], row = [], cell = '', inQ = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { cell += c; }
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if (c !== '\r') { cell += c; }
+    }
+  }
+  if (cell !== '' || row.length > 0) { row.push(cell); row.push(cell); rows.push(row); }
+  return rows;
+}
+
+function csvRowsToDias(rows) {
+  var diasMap = {}, diasOrder = [];
+  var split = function(s) {
+    if (!s || !s.trim()) return [];
+    return s.split('|').map(function(x){ return x.trim(); }).filter(Boolean);
+  };
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r || !r[0] || !r[1]) continue;
+    var diaId = r[1].trim();
+    if (!diasMap[diaId]) {
+      diasMap[diaId] = { id: diaId, fecha: r[0].trim(), etiqueta: (r[2] || '').trim(), resumen_dia: (r[3] || '').trim(), comidas: [] };
+      diasOrder.push(diaId);
+    }
+    diasMap[diaId].comidas.push({
+      id: (r[4] || '').trim(),
+      titulo: (r[5] || '').trim(),
+      hora: (r[6] || '').trim(),
+      icono: (r[7] || '🍽️').trim(),
+      alimentos: split(r[8]),
+      tags: { cubierto: split(r[9]), atencion: split(r[10]), contexto: split(r[11]), suplementos: split(r[12]) },
+      nota: (r[13] && r[13].trim()) ? r[13].trim() : null
+    });
+  }
+  return diasOrder.map(function(id){ return diasMap[id]; });
+}
+
+async function cargarRegistros() {
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="empty-state"><span>⏳</span>Cargando datos...</div>';
+  try {
+    const res = await fetch(SHEET_CSV_PUB);
+    const text = await res.text();
+    const rows = parseCSVText(text);
+    DATA.dias = csvRowsToDias(rows);
+    if (DATA.dias.length > 0) {
+      document.getElementById("hero-meta").textContent = "Última entrada: " + DATA.dias[DATA.dias.length-1].fecha;
+      document.getElementById("hero-tag").textContent = "Registro Activo";
+    }
+    return true;
+  } catch(e) {
+    app.innerHTML = '<div class="empty-state"><span>⚠️</span>Error de conexión.</div>';
+    return false;
+  }
+}
+
+function labelTag(key) { return TAG_CATALOG[key] ? TAG_CATALOG[key].label : key; }
+function renderTags(arr, cls) { return (arr || []).map(t => '<span class="tag ' + cls + '">' + labelTag(t) + '</span>').join(""); }
+
+function renderComida(c) {
+  var alimentos = c.alimentos.map(a => '<div class="food-item"><div class="food-dot"></div>' + a + '</div>').join("");
+  var secciones = "";
+  if (c.tags.cubierto.length > 0) secciones += '<div class="tag-section-title">Cubierto</div><div class="tag-grid">' + renderTags(c.tags.cubierto, "ok") + "</div>";
+  if (c.tags.atencion.length > 0) secciones += '<div class="tag-section-title">Atención</div><div class="tag-grid">' + renderTags(c.tags.atencion, "warn") + "</div>";
+  if (c.tags.contexto.length > 0) secciones += '<div class="tag-section-title">Contexto</div><div class="tag-grid">' + renderTags(c.tags.contexto, "ctx") + "</div>";
+  if (c.tags.suplementos.length > 0) secciones += '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' + renderTags(c.tags.suplementos, "purple") + "</div>";
+  var nota = c.nota ? '<div class="note">' + c.nota + "</div>" : "";
+  return '<div class="meal-card"><div class="meal-header" onclick="toggle(this)"><div class="meal-header-left"><div class="meal-icon">' + c.icono + "</div><div><div class="meal-title">' + c.titulo + '</div><div class="meal-time">' + c.hora + "</div></div></div><div class="meal-chevron">&#x25BC;</div></div><div class="meal-body">' + alimentos + nota + secciones + '</div></div>';
+}
+
+function renderDia(dia) {
+  var comidas = dia.comidas.map(renderComida).join("");
+  return '<div id="' + dia.id + '" class="day-section"><div class="section-header"><h2>' + dia.etiqueta + '</h2><div class="section-line"></div></div><div class="day-label"><div class="day-dot"></div>' + dia.resumen_dia + "</div>" + comidas + "</div>";
+}
+
+function toggle(h) { h.parentElement.classList.toggle("open"); }
+
+var appState = { view: "dia", diaId: null };
+
+function updateView() {
+  const app = document.getElementById("app");
+  if (appState.view === "dia") {
+    var dia = DATA.dias.find(d => d.id === appState.diaId);
+    app.innerHTML = dia ? renderDia(dia) : '<div class="empty-state">No hay datos para hoy</div>';
+  } else {
+    app.innerHTML = '<div class="empty-state">Vista en desarrollo</div>';
+  }
+}
+
+window.onload = async function() {
+  const ok = await cargarRegistros();
+  if (ok && DATA.dias.length > 0) {
+    appState.diaId = DATA.dias[DATA.dias.length-1].id;
+    updateView();
+  }
+};
+</script>
+</body>
+</html>
