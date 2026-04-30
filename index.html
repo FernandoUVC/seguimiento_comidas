@@ -271,8 +271,11 @@ const DATA = {
 //  GOOGLE SHEETS — carga dinámica de registros
 //  El sheet se lee en cada apertura del archivo
 // ─────────────────────────────────────────────
-var SHEET_ID   = '1O1lNwKP8JQGt6g3cTr28oNX_Hi1LyeusWFMDPafhpdo';
-var SHEET_CSV  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=0';
+// El ID extraído de tu URL de publicación
+var SHEET_ID  = '2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY';
+
+// Construcción de la URL de publicación
+var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/' + SHEET_ID + '/pub?output=csv';
 
 // Parser CSV robusto — maneja campos entre comillas con comas y saltos
 function parseCSVText(text) {
