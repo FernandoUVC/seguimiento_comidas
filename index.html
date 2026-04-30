@@ -140,14 +140,12 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
 //  Claude siempre usa estas keys exactas
 // ─────────────────────────────────────────────
 const TAG_CATALOG = {
-  // Macronutrientes
   proteina:               { label: "Proteína",               cat: "macro"     },
   carbohidratos_integrales:{ label: "Carbohidratos integrales", cat: "macro"  },
   grasas_saludables:      { label: "Grasas saludables",       cat: "macro"    },
   grasas_mono:            { label: "Grasas monoinsaturadas",  cat: "macro"    },
   fibra:                  { label: "Fibra",                   cat: "macro"    },
   omega3:                 { label: "Omega-3",                 cat: "macro"    },
-  // Vitaminas
   vitamina_a:             { label: "Vitamina A",              cat: "vitamina" },
   vitamina_b6:            { label: "Vitamina B6",             cat: "vitamina" },
   vitamina_b12:           { label: "Vitamina B12",            cat: "vitamina" },
@@ -157,9 +155,8 @@ const TAG_CATALOG = {
   vitamina_k:             { label: "Vitamina K",              cat: "vitamina" },
   colina:                 { label: "Colina",                  cat: "vitamina" },
   folato:                 { label: "Folato",                  cat: "vitamina" },
-  biotina:                { label: "Biotina",                 cat: "vitamina" },  // preparado
-  vitamina_b1:            { label: "Vitamina B1",             cat: "vitamina" },  // preparado
-  // Minerales
+  biotina:                { label: "Biotina",                 cat: "vitamina" },  
+  vitamina_b1:            { label: "Vitamina B1",             cat: "vitamina" },  
   calcio:                 { label: "Calcio",                  cat: "mineral"  },
   hierro_hemo:            { label: "Hierro hemo",             cat: "mineral"  },
   hierro_vegetal:         { label: "Hierro vegetal",          cat: "mineral"  },
@@ -169,24 +166,21 @@ const TAG_CATALOG = {
   yodo:                   { label: "Yodo",                    cat: "mineral"  },
   zinc:                   { label: "Zinc",                    cat: "mineral"  },
   cobre:                  { label: "Cobre",                   cat: "mineral"  },
-  cromo:                  { label: "Cromo",                   cat: "mineral"  },  // preparado
-  manganeso:              { label: "Manganeso",               cat: "mineral"  },  // preparado
-  fosforo:                { label: "Fósforo",                 cat: "mineral"  },  // preparado
-  // Funcionales
+  cromo:                  { label: "Cromo",                   cat: "mineral"  },  
+  manganeso:              { label: "Manganeso",               cat: "mineral"  },  
+  fosforo:                { label: "Fósforo",                 cat: "mineral"  },  
   probioticos:            { label: "Probióticos",             cat: "funcional"},
   prebioticos:            { label: "Prebióticos",             cat: "funcional"},
   antioxidantes:          { label: "Antioxidantes",           cat: "funcional"},
   antiinflamatorio:       { label: "Antiinflamatorio",        cat: "funcional"},
   hidratacion:            { label: "Hidratación",             cat: "funcional"},
   enzimas_digestivas:     { label: "Enzimas digestivas",      cat: "funcional"},
-  polifenoles:            { label: "Polifenoles",             cat: "funcional"},  // preparado
-  colageno:               { label: "Colágeno",                cat: "funcional"},  // preparado
-  // Bioactivos
+  polifenoles:            { label: "Polifenoles",             cat: "funcional"},  
+  colageno:               { label: "Colágeno",                cat: "funcional"},  
   allicina:               { label: "Allicina",                cat: "bioactivo"},
   capsaicina:             { label: "Capsaicina",              cat: "bioactivo"},
   glucosinolatos:         { label: "Glucosinolatos",          cat: "bioactivo"},
   curcumina:              { label: "Curcumina",               cat: "bioactivo"},
-  // Alertas estructurales
   sodio_alto:             { label: "Sodio alto",              cat: "alerta"   },
   sodio_moderado:         { label: "Sodio moderado",          cat: "alerta"   },
   grasas_saturadas:       { label: "Grasas saturadas",        cat: "alerta"   },
@@ -199,7 +193,6 @@ const TAG_CATALOG = {
   ultraprocesados:        { label: "Ultraprocesados",         cat: "alerta"   },
   fritos:                 { label: "Fritos",                  cat: "alerta"   },
   ayuno_prolongado:       { label: "Ayuno prolongado",        cat: "alerta"   },
-  // Contexto
   comida_elaborada:       { label: "Comida elaborada",        cat: "contexto" },
   comida_rapida:          { label: "Comida rápida",           cat: "contexto" },
   comida_fuera:           { label: "Comida fuera",            cat: "contexto" },
@@ -207,7 +200,6 @@ const TAG_CATALOG = {
   compartido:             { label: "Compartido",              cat: "contexto" },
   en_ayunas:              { label: "En ayunas",               cat: "contexto" },
   recalentado:            { label: "Recalentado",             cat: "contexto" },
-  // Suplementos
   doublex_media:          { label: "Double X · media dosis",  cat: "suplemento"},
   doublex_completa:       { label: "Double X · dosis completa", cat: "suplemento"},
   omega3_capsula:         { label: "Omega-3 Nutrilite · 1 cáp", cat: "suplemento"},
@@ -235,9 +227,30 @@ const DATA = {
     { label: "Déficit crónico",    valor: "Frutas frescas de día, verduras de hoja, vegetales en general" },
     { label: "Tiendas",            valor: "Costco, Walmart, Chedraui, Super Aki (Cancún / Puerto Morelos)" }
   ],
-  dias: [], // ← registros cargados desde Google Sheets en tiempo real
-    // ── Resumen: evaluación Claude + conteos automáticos desde tags ──
-    
+  dias: [], 
+  resumen: {
+    categorias: [
+      {
+        id: "proteina", nombre: "Proteína",
+        evaluacion: { vie17:"BIEN", sab18:"EXCELENTE", dom19:"EXCELENTE", lun20:"EXCELENTE", mar21:"EXCELENTE", mie22:"BIEN", jue23:"BIEN", vie24:"BIEN", sab25:"EXCELENTE", dom26:"BIEN", lun27:"EXCELENTE" },
+        nota_claude: "12 días sin excepción. Mar28: huevo + salchicha + pollo (caldo) + amaranto — cuádruple fuente en desayuno."
+      },
+      {
+        id: "vegetales", nombre: "Vegetales",
+        evaluacion: { vie17:"AUSENTE", sab18:"BIEN", dom19:"EXCELENTE", lun20:"PARCIAL", mar21:"AUSENTE", mie22:"EXCELENTE", jue23:"EXCELENTE", vie24:"AUSENTE", sab25:"EXCELENTE", dom26:"AUSENTE", lun27:"EXCELENTE" },
+        nota_claude: "Patrón claro: excelentes en días de comida elaborada, ausentes en días ligeros. Lun27 rompe el patrón definitivamente: espinacas + jitomate + zanahoria (desayuno) + estofado + jícama + pepino (comida) + nopalitos + cebolla (cena)."
+      },
+      {
+        id: "vitamina_c", nombre: "Vitamina C",
+        evaluacion: { vie17:"PARCIAL", sab18:"BIEN", dom19:"BIEN", lun20:"PARCIAL", mar21:"PARCIAL", mie22:"PARCIAL", jue23:"EXCELENTE", vie24:"BIEN", sab25:"EXCELENTE", dom26:"PARCIAL", lun27:"EXCELENTE" },
+        nota_claude: "Lun27: kiwi + jitomate + zanahoria + naranja + limones de limonada = cinco fuentes de vitamina C. Máximo histórico del registro."
+      },
+      {
+        id: "fibra", nombre: "Fibra vegetal",
+        evaluacion: { vie17:"PARCIAL", sab18:"BIEN", dom19:"BIEN", lun20:"PARCIAL", mar21:"BIEN", mie22:"EXCELENTE", jue23:"EXCELENTE", vie24:"BIEN", sab25:"EXCELENTE", dom26:"PARCIAL", lun27:"EXCELENTE" },
+        nota_claude: "Lun27: espinacas + zanahoria + kiwi + garbanzos + jícama + pepino + nopalitos (mucílago) = mejor día de fibra del registro por amplio margen."
+      },
+      {
         id: "sodio", nombre: "Sodio",
         evaluacion: { vie17:"MODERADO", sab18:"ALTO", dom19:"MODERADO", lun20:"ALTO", mar21:"MODERADO", mie22:"ALTO", jue23:"ALTO", vie24:"MODERADO", sab25:"MUY_ALTO", dom26:"MODERADO", lun27:"MODERADO" },
         nota_claude: "Patrón sostenido: latas, embutidos y comida fuera son las fuentes principales. Hoy: solo la sal en cocción."
@@ -262,22 +275,19 @@ const DATA = {
     { emoji: "🍊", texto: "Una fruta fresca durante el día: naranja, kiwi o toronja — no en el bowl nocturno. La vitamina C en ayunas o con la comida principal mejora la absorción de hierro de los frijoles." },
     { emoji: "🥫", texto: "Frijoles de olla > lata: una olla semanal elimina el sodio de las latas sin cambiar el hábito de consumo. Considerando que los frijoles aparecen casi a diario, el impacto es significativo." },
     { emoji: "🌿", texto: "Salsa casera vs comercial: jitomate + chile + cilantro licuados = mismo sabor que La Costeña, cero sodio. Ya fue identificado como tip — pendiente aplicar." },
-    { emoji: "💧", texto: "Hidratación activa: el agua aparece principalmente como reacción al sodio alto (post-cine, post-jamón). Incorporarla proactivamente durante el día." }
+    { emoji: "💧", texto: "Hidratación activa: el agua aparece principalmente como reacción al sodio alto (post-cine, post-jamón). Incorporarla proactivamente durante el día." },
+    { emoji: "🌵", texto: "Nopalitos: incorpóralos regularmente. Son uno de los vegetales más completos y baratos de México — fibra soluble (mucílago), calcio vegetal, vitamina C y regulación de glucosa postprandial. En taco o ensalada, disponibles en cualquier Super Aki o Chedraui." },
+    { emoji: "🥩", texto: "Arrachera a la plancha sin aceite extra es una de las mejores preparaciones del registro: hierro hemo de alta calidad, zinc, B12 y sin frituras. Úsala como referencia para noches con tacos." },
+    { emoji: "🥦", texto: "Brócoli empapelado con pescado es una fórmula a repetir: conserva el sulforafano mejor que hervido, vitamina C intacta, y combina perfecto con cualquier filete. Disponible en Costco y Walmart a buen precio." },
+    { emoji: "🐟", texto: "Dos pescados en una comida (tilapia + salmón) es el mayor aporte de omega-3 del registro. El salmón en particular tiene astaxantina — uno de los antioxidantes más potentes de origen animal. Incorporarlo una vez por semana ya marca diferencia." }
   ]
 };
 
-
 // ─────────────────────────────────────────────
 //  GOOGLE SHEETS — carga dinámica de registros
-//  El sheet se lee en cada apertura del archivo
 // ─────────────────────────────────────────────
-// El ID extraído de tu URL de publicación
-var SHEET_ID  = '2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY';
+var SHEET_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
 
-// Construcción de la URL de publicación
-var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/' + SHEET_ID + '/pub?output=csv';
-
-// Parser CSV robusto — maneja campos entre comillas con comas y saltos
 function parseCSVText(text) {
   var rows = [], row = [], cell = '', inQ = false;
   for (var i = 0; i < text.length; i++) {
@@ -297,12 +307,7 @@ function parseCSVText(text) {
   return rows;
 }
 
-// Convierte filas CSV → estructura DATA.dias
-// Columnas: fecha | dia_id | dia_etiqueta | resumen_dia | comida_id | titulo |
-//           hora | icono | alimentos | tags_cubierto | tags_atencion |
-//           tags_contexto | tags_suplementos | nota
 function csvRowsToDias(rows) {
-  // row[0] = título del sheet, row[1] = encabezados, row[2+] = datos
   var diasMap = {}, diasOrder = [];
   var split = function(s) {
     if (!s || !s.trim()) return [];
@@ -340,7 +345,6 @@ function csvRowsToDias(rows) {
   return diasOrder.map(function(id){ return diasMap[id]; });
 }
 
-// Carga los registros desde Google Sheets y actualiza DATA.dias
 async function cargarRegistros() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem">' +
@@ -369,13 +373,8 @@ async function cargarRegistros() {
       '</div>';
     return false;
   }
-      }
+}
 
-// ─────────────────────────────────────────────
-//  LÓGICA AUTOMÁTICA — nunca se toca
-// ─────────────────────────────────────────────
-
-// Cuenta ocurrencias de un tag de atención a lo largo de todos los días
 function contarTagAtencion(tagKey) {
   var count = 0;
   DATA.dias.forEach(function(dia) {
@@ -386,7 +385,6 @@ function contarTagAtencion(tagKey) {
   return count;
 }
 
-// Cuenta días que tienen al menos una comida con ese tag en cubierto
 function diasConTag(tagKey) {
   var dias = 0;
   DATA.dias.forEach(function(dia) {
@@ -398,7 +396,6 @@ function diasConTag(tagKey) {
   return dias;
 }
 
-// Cuenta días con ayuno prolongado
 function calcAutoStats() {
   return {
     sodio_alto:       contarTagAtencion("sodio_alto"),
@@ -408,7 +405,7 @@ function calcAutoStats() {
     ayuno:            contarTagAtencion("ayuno_prolongado"),
     comida_fuera:     contarTagAtencion("comida_fuera") + DATA.dias.reduce(function(acc, d) {
       return acc + d.comidas.filter(function(c){ return c.tags.contexto.indexOf("comida_fuera") !== -1; }).length;
-    }, 0) / 2,  // approximate unique meals
+    }, 0) / 2,  
     dias_proteina:    diasConTag("proteina"),
     dias_vitamina_c:  diasConTag("vitamina_c"),
     dias_omega3:      diasConTag("omega3"),
@@ -420,10 +417,6 @@ function calcAutoStats() {
     }, 0)
   };
 }
-
-// ─────────────────────────────────────────────
-//  RENDER FUNCTIONS — nunca se tocan
-// ─────────────────────────────────────────────
 
 function labelTag(key) {
   return TAG_CATALOG[key] ? TAG_CATALOG[key].label : key;
@@ -520,7 +513,6 @@ function renderResumen() {
   var html = '<div id="resumen"><div class="section-header"><h2>Resumen semanal</h2><div class="section-line"></div></div>';
   html += '<p style="color:var(--muted);font-size:13px;margin-bottom:1rem">Últimos ' + DATA.dias.length + ' días registrados</p>';
 
-  // Estadísticas automáticas
   html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:1rem;">' +
     '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;">Conteo automático de tags</div>' +
     '<div class="auto-stats">' +
@@ -598,20 +590,12 @@ function renderContexto() {
   return html;
 }
 
-function renderNav() {} // deprecated — kept for compatibility
-
 function render() {
   document.getElementById("hero-tag").textContent = "Semana " + DATA.meta.semana + " · " + DATA.meta.periodo;
   document.getElementById("hero-meta").textContent = "Actualizado: " + DATA.meta.actualizado + " · " + DATA.meta.ubicacion;
 }
 
-
-   // ─────────────────────────────────────────────
-//  STATE & CALENDAR NAVIGATION
-// ─────────────────────────────────────────────
 var appState = { view: "dia", diaId: null };
-
-// April 2026: Apr 1 = Wednesday → offset 2 in Mon-start week (0=Mon…6=Sun)
 var CAL_META = { mes: "Abril 2026", primerOffset: 2, totalDias: 30, anio: 2026, mesNum: 4 };
 
 var CAL_MESES = [
@@ -636,7 +620,6 @@ function calNavMes(dir) {
   if (next) next.disabled = (calMesIdx === CAL_MESES.length - 1);
 }
 
-
 function buildDiasConData() {
   var map = {};
   DATA.dias.forEach(function(d) {
@@ -657,7 +640,6 @@ function renderCalendar() {
   var label = document.getElementById("cal-mes-label");
   var calWrap = document.getElementById("cal-wrap");
 
-  // Hide calendar when not in día view
   calWrap.style.display = (appState.view === "dia") ? "" : "none";
   if (appState.view !== "dia") return;
 
@@ -702,19 +684,12 @@ function updateView() {
     var dia = DATA.dias.find(function(d) { return d.id === appState.diaId; });
     app.innerHTML = dia ? renderDia(dia) : '<div class="empty-state"><span>🔍</span>Día no encontrado</div>';
 
-  } else if (appState.view === "semana") {
+  } else if (appState.view === "semana" || appState.view === "mes") {
     app.innerHTML = renderResumen() + renderAlertas() + renderConsejos();
-
-  } else if (appState.view === "mes") {
-    // When there are multiple weeks, this will aggregate. For now same as semana.
-    app.innerHTML = renderResumen() + renderAlertas() + renderConsejos();
-
   } else if (appState.view === "contexto") {
     app.innerHTML = renderContexto();
-
   } else if (appState.view === "alertas") {
     app.innerHTML = renderAlertas();
-
   } else if (appState.view === "consejos") {
     app.innerHTML = renderConsejos();
   }
@@ -725,7 +700,6 @@ function selectDia(id) {
   appState.diaId = id;
   updateView();
   document.getElementById("cal-prev").disabled = true;
-  // Scroll content into view smoothly
   setTimeout(function() {
     var app = document.getElementById("app");
     if (app) app.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -743,7 +717,7 @@ function setView(v) {
 }
 
 // ─────────────────────────────────────────────
-//  EXPORT CSV — desde DATA, nunca manual
+//  EXPORT CSV — Corregido para evitar error de sintaxis
 // ─────────────────────────────────────────────
 function exportCSV() {
   var rows = [["Fecha","Día","Comida","Hora","Alimentos","Tags cubierto","Tags atención","Tags contexto","Suplementos","Nota"]];
@@ -766,12 +740,9 @@ function exportCSV() {
   var csv = rows.map(function(r) {
     return r.map(function(cell) {
       return '"' + String(cell).replace(/"/g, '""') + '"';
-    },
-    { emoji: "🌵", texto: "Nopalitos: incorpóralos regularmente. Son uno de los vegetales más completos y baratos de México — fibra soluble (mucílago), calcio vegetal, vitamina C y regulación de glucosa postprandial. En taco o ensalada, disponibles en cualquier Super Aki o Chedraui." },
-    { emoji: "🥩", texto: "Arrachera a la plancha sin aceite extra es una de las mejores preparaciones del registro: hierro hemo de alta calidad, zinc, B12 y sin frituras. Úsala como referencia para noches con tacos." },
-    { emoji: "🥦", texto: "Brócoli empapelado con pescado es una fórmula a repetir: conserva el sulforafano mejor que hervido, vitamina C intacta, y combina perfecto con cualquier filete. Disponible en Costco y Walmart a buen precio." },
-    { emoji: "🐟", texto: "Dos pescados en una comida (tilapia + salmón) es el mayor aporte de omega-3 del registro. El salmón en particular tiene astaxantina — uno de los antioxidantes más potentes de origen animal. Incorporarlo una vez por semana ya marca diferencia." }).join(",");
+    }).join(",");
   }).join("\n");
+  
   var bom = "\uFEFF";
   var blob = new Blob([bom + csv], {type: "text/csv;charset=utf-8;"});
   var url = URL.createObjectURL(blob);
@@ -784,25 +755,19 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
-// ─────────────────────────────────────────────
-//  COMPORTAMIENTO UI
-// ─────────────────────────────────────────────
 function toggle(h) { h.parentElement.classList.toggle("open"); }
 
 window.onload = async function() {
   render();
 
-  // Wire secondary nav pills
   var pills = document.querySelectorAll(".sec-pill");
   pills.forEach(function(p) {
     p.onclick = function() { setView(p.dataset.view); };
   });
 
-  // Cargar registros desde Google Sheets (en tiempo real)
   var ok = await cargarRegistros();
   if (!ok || DATA.dias.length === 0) return;
 
-  // Seleccionar el último día registrado por defecto
   var ultimo = DATA.dias[DATA.dias.length - 1];
   appState.diaId = ultimo.id;
   appState.view = "dia";
