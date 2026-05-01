@@ -431,7 +431,9 @@ function renderRegistro() {
   '</div>';
 }
 
-  
+// ─────────────────────────────────────────────
+//  Resto del código original (sin cambios)
+// ─────────────────────────────────────────────
 function parseCSVText(text) {
   var rows = [], row = [], cell = '', inQ = false;
   for (var i = 0; i < text.length; i++) {
@@ -462,27 +464,13 @@ function csvRowsToDias(rows) {
     if (!r || !r[0] || !r[0].trim() || !r[1] || !r[1].trim()) continue;
     var diaId = r[1].trim();
     if (!diasMap[diaId]) {
-      diasMap[diaId] = {
-        id: diaId,
-        fecha: r[0].trim(),
-        etiqueta: (r[2] || '').trim(),
-        resumen_dia: (r[3] || '').trim(),
-        comidas: []
-      };
+      diasMap[diaId] = { id: diaId, fecha: r[0].trim(), etiqueta: (r[2] || '').trim(), resumen_dia: (r[3] || '').trim(), comidas: [] };
       diasOrder.push(diaId);
     }
     diasMap[diaId].comidas.push({
-      id: (r[4] || '').trim(),
-      titulo: (r[5] || '').trim(),
-      hora: (r[6] || '').trim(),
-      icono: (r[7] || '🍽️').trim(),
+      id: (r[4] || '').trim(), titulo: (r[5] || '').trim(), hora: (r[6] || '').trim(), icono: (r[7] || '🍽️').trim(),
       alimentos: split(r[8]),
-      tags: {
-        cubierto:    split(r[9]),
-        atencion:    split(r[10]),
-        contexto:    split(r[11]),
-        suplementos: split(r[12])
-      },
+      tags: { cubierto: split(r[9]), atencion: split(r[10]), contexto: split(r[11]), suplementos: split(r[12]) },
       nota: (r[13] && r[13].trim()) ? r[13].trim() : null
     });
   }
@@ -491,10 +479,7 @@ function csvRowsToDias(rows) {
 
 async function cargarRegistros() {
   var app = document.getElementById('app');
-  app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem">' +
-    '<span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span>' +
-    '<div style="color:var(--muted);font-size:13px">Cargando registros...</div>' +
-    '</div>';
+  app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
   try {
     var res = await fetch(SHEET_CSV);
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -502,238 +487,97 @@ async function cargarRegistros() {
     var rows = parseCSVText(text);
     DATA.dias = csvRowsToDias(rows);
     if (DATA.dias.length === 0) throw new Error('El sheet no devolvió registros válidos');
-    console.log('[Sheet] ' + DATA.dias.length + ' días cargados, ' +
-      DATA.dias.reduce(function(acc,d){ return acc + d.comidas.length; }, 0) + ' comidas.');
     return true;
   } catch(e) {
     console.error('[Sheet] Error:', e);
-    app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem">' +
-      '<span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4">⚠️</span>' +
-      '<div style="color:var(--muted);font-size:13px">' +
-        'No se pudieron cargar los registros.<br>' +
-        '<small>' + e.message + '</small><br><br>' +
-        '<small style="opacity:.6">Verifica que el Sheet sea público (compartir → cualquiera con el enlace)</small>' +
-      '</div>' +
-      '</div>';
+    app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4">⚠️</span><div style="color:var(--muted);font-size:13px">No se pudieron cargar los registros.<br><small>' + e.message + '</small></div></div>';
     return false;
   }
 }
 
 function contarTagAtencion(tagKey) {
   var count = 0;
-  DATA.dias.forEach(function(dia) {
-    dia.comidas.forEach(function(comida) {
-      if (comida.tags.atencion.indexOf(tagKey) !== -1) count++;
-    });
-  });
+  DATA.dias.forEach(function(dia) { dia.comidas.forEach(function(comida) { if (comida.tags.atencion.indexOf(tagKey) !== -1) count++; }); });
   return count;
 }
-
 function diasConTag(tagKey) {
   var dias = 0;
-  DATA.dias.forEach(function(dia) {
-    var found = dia.comidas.some(function(c) {
-      return c.tags.cubierto.indexOf(tagKey) !== -1;
-    });
-    if (found) dias++;
-  });
+  DATA.dias.forEach(function(dia) { var found = dia.comidas.some(function(c) { return c.tags.cubierto.indexOf(tagKey) !== -1; }); if (found) dias++; });
   return dias;
 }
-
 function calcAutoStats() {
   return {
-    sodio_alto:       contarTagAtencion("sodio_alto"),
-    sodio_moderado:   contarTagAtencion("sodio_moderado"),
-    sin_vegetales:    contarTagAtencion("sin_vegetales"),
-    fritos:           contarTagAtencion("fritos"),
-    ayuno:            contarTagAtencion("ayuno_prolongado"),
-    comida_fuera:     contarTagAtencion("comida_fuera") + DATA.dias.reduce(function(acc, d) {
-      return acc + d.comidas.filter(function(c){ return c.tags.contexto.indexOf("comida_fuera") !== -1; }).length;
-    }, 0) / 2,  
-    dias_proteina:    diasConTag("proteina"),
-    dias_vitamina_c:  diasConTag("vitamina_c"),
-    dias_omega3:      diasConTag("omega3"),
-    doublex_tomas:    DATA.dias.reduce(function(acc, d) {
-      return acc + d.comidas.filter(function(c){
-        return c.tags.suplementos.indexOf("doublex_media") !== -1 ||
-               c.tags.suplementos.indexOf("doublex_completa") !== -1;
-      }).length;
-    }, 0)
+    sodio_alto: contarTagAtencion("sodio_alto"), sodio_moderado: contarTagAtencion("sodio_moderado"),
+    sin_vegetales: contarTagAtencion("sin_vegetales"), fritos: contarTagAtencion("fritos"),
+    ayuno: contarTagAtencion("ayuno_prolongado"),
+    dias_proteina: diasConTag("proteina"), dias_vitamina_c: diasConTag("vitamina_c"),
+    dias_omega3: diasConTag("omega3"),
+    doublex_tomas: DATA.dias.reduce(function(acc, d) { return acc + d.comidas.filter(function(c){ return c.tags.suplementos.indexOf("doublex_media") !== -1 || c.tags.suplementos.indexOf("doublex_completa") !== -1; }).length; }, 0)
   };
 }
-
-function labelTag(key) {
-  return TAG_CATALOG[key] ? TAG_CATALOG[key].label : key;
-}
-
+function labelTag(key) { return TAG_CATALOG[key] ? TAG_CATALOG[key].label : key; }
 function renderTags(arr, cls) {
   if (!arr || arr.length === 0) return "";
-  return arr.map(function(t) {
-    return '<span class="tag ' + cls + '">' + labelTag(t) + '</span>';
-  }).join("");
+  return arr.map(function(t) { return '<span class="tag ' + cls + '">' + labelTag(t) + '</span>'; }).join("");
 }
-
 function renderComida(c) {
-  var alimentos = c.alimentos.map(function(a) {
-    return '<div class="food-item"><div class="food-dot"></div>' + a + '</div>';
-  }).join("");
-
+  var alimentos = c.alimentos.map(function(a) { return '<div class="food-item"><div class="food-dot"></div>' + a + '</div>'; }).join("");
   var secciones = "";
-
-  if (c.tags.cubierto.length > 0) {
-    secciones += '<div class="tag-section-title">Cubierto</div><div class="tag-grid">' +
-      renderTags(c.tags.cubierto, "ok") + "</div>";
-  }
-  if (c.tags.atencion.length > 0) {
-    secciones += '<div class="tag-section-title">Atención</div><div class="tag-grid">' +
-      renderTags(c.tags.atencion, "warn") + "</div>";
-  }
-  if (c.tags.contexto.length > 0) {
-    secciones += '<div class="tag-section-title">Contexto</div><div class="tag-grid">' +
-      renderTags(c.tags.contexto, "ctx") + "</div>";
-  }
-  if (c.tags.suplementos.length > 0) {
-    secciones += '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' +
-      renderTags(c.tags.suplementos, "purple") + "</div>";
-  }
-
-  var nota = c.nota
-    ? '<div class="note">' + c.nota + "</div>"
-    : "";
-
+  if (c.tags.cubierto.length > 0) secciones += '<div class="tag-section-title">Cubierto</div><div class="tag-grid">' + renderTags(c.tags.cubierto, "ok") + "</div>";
+  if (c.tags.atencion.length > 0) secciones += '<div class="tag-section-title">Atención</div><div class="tag-grid">' + renderTags(c.tags.atencion, "warn") + "</div>";
+  if (c.tags.contexto.length > 0) secciones += '<div class="tag-section-title">Contexto</div><div class="tag-grid">' + renderTags(c.tags.contexto, "ctx") + "</div>";
+  if (c.tags.suplementos.length > 0) secciones += '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' + renderTags(c.tags.suplementos, "purple") + "</div>";
+  var nota = c.nota ? '<div class="note">' + c.nota + "</div>" : "";
   var supIndicators = "";
   if (c.tags.suplementos && c.tags.suplementos.length > 0) {
-    var supMap = {
-      doublex_media:    { label: "2X",    color: "#fbbf24" },
-      doublex_completa: { label: "2X·2",  color: "#fb923c" },
-      omega3_capsula:   { label: "Ω3",    color: "#60a5fa" },
-      menjurje:         { label: "🧉 MNJ", color: "#4ade80" }
-    };
-    supIndicators = c.tags.suplementos.map(function(s) {
-      var m = supMap[s] || { label: s, color: "#6b7280" };
-      return '<span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.04em;background:' + m.color + '22;border:1px solid ' + m.color + '55;color:' + m.color + ';margin-left:6px;flex-shrink:0;">' + m.label + '</span>';
-    }).join("");
+    var supMap = { doublex_media:{label:"2X",color:"#fbbf24"}, doublex_completa:{label:"2X·2",color:"#fb923c"}, omega3_capsula:{label:"Ω3",color:"#60a5fa"}, menjurje:{label:"🧉 MNJ",color:"#4ade80"} };
+    supIndicators = c.tags.suplementos.map(function(s){ var m=supMap[s]||{label:s,color:"#6b7280"}; return '<span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.04em;background:'+m.color+'22;border:1px solid '+m.color+'55;color:'+m.color+';margin-left:6px;flex-shrink:0;">'+m.label+'</span>'; }).join("");
   }
-
-  return '<div class="meal-card">' +
-    '<div class="meal-header" onclick="toggle(this)">' +
-      '<div class="meal-header-left">' +
-        '<div class="meal-icon">' + c.icono + "</div>" +
-        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;">' +
-          '<div class="meal-title">' + c.titulo + '</div>' +
-          supIndicators +
-        '</div>' +
-        '<div class="meal-time">' + c.hora + "</div>" +
-      "</div>" +
-      '<div class="meal-chevron">&#x25BC;</div>' +
-    "</div>" +
-    '<div class="meal-body">' +
-      (alimentos ? '<div class="food-list">' + alimentos + "</div>" : "") +
-      nota +
-      secciones +
-    "</div>" +
-  "</div>";
+  return '<div class="meal-card"><div class="meal-header" onclick="toggle(this)"><div class="meal-header-left"><div class="meal-icon">'+c.icono+'</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><div class="meal-title">'+c.titulo+'</div>'+supIndicators+'</div><div class="meal-time">'+c.hora+'</div></div><div class="meal-chevron">&#x25BC;</div></div><div class="meal-body">'+(alimentos?'<div class="food-list">'+alimentos+'</div>':'')+nota+secciones+'</div></div>';
 }
-
 function renderDia(dia) {
   var comidas = dia.comidas.map(renderComida).join("");
-  return '<div id="' + dia.id + '" class="day-section">' +
-    '<div class="section-header"><h2>' + dia.etiqueta + '</h2><div class="section-line"></div></div>' +
-    '<div class="day-label"><div class="day-dot"></div>' + dia.resumen_dia + "</div>" +
-    comidas +
-  "</div>";
+  return '<div id="'+dia.id+'" class="day-section"><div class="section-header"><h2>'+dia.etiqueta+'</h2><div class="section-line"></div></div><div class="day-label"><div class="day-dot"></div>'+dia.resumen_dia+'</div>'+comidas+'</div>';
 }
-
 function badgeClass(val) {
-  if (val === "EXCELENTE") return "badge-green";
-  if (val === "BIEN") return "badge-green";
+  if (val === "EXCELENTE" || val === "BIEN") return "badge-green";
   if (val === "PARCIAL" || val === "MODERADO") return "badge-yellow";
   if (val === "AUSENTE" || val === "ALTO" || val === "MUY_ALTO") return "badge-red";
   return "badge-gray";
 }
-
 function renderResumen() {
   var stats = calcAutoStats();
   var html = '<div id="resumen"><div class="section-header"><h2>Resumen semanal</h2><div class="section-line"></div></div>';
   html += '<p style="color:var(--muted);font-size:13px;margin-bottom:1rem">Últimos ' + DATA.dias.length + ' días registrados</p>';
-
-  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:1rem;">' +
-    '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;">Conteo automático de tags</div>' +
-    '<div class="auto-stats">' +
-      '<span class="stat-pill red">Sodio alto: ' + stats.sodio_alto + ' comidas</span>' +
-      '<span class="stat-pill yellow">Sodio moderado: ' + stats.sodio_moderado + ' comidas</span>' +
-      '<span class="stat-pill red">Sin vegetales: ' + stats.sin_vegetales + ' comidas</span>' +
-      '<span class="stat-pill yellow">Fritos: ' + stats.fritos + ' comidas</span>' +
-      '<span class="stat-pill yellow">Ayuno prolongado: ' + stats.ayuno + ' días</span>' +
-      '<span class="stat-pill green">Proteína cubierta: ' + stats.dias_proteina + '/' + DATA.dias.length + ' días</span>' +
-      '<span class="stat-pill green">Vitamina C cubierta: ' + stats.dias_vitamina_c + '/' + DATA.dias.length + ' días</span>' +
-      '<span class="stat-pill green">Omega-3: ' + stats.dias_omega3 + '/' + DATA.dias.length + ' días</span>' +
-      '<span class="stat-pill green">Double X tomas: ' + stats.doublex_tomas + '</span>' +
-    "</div>" +
-  "</div>";
-
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:1rem;"><div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;">Conteo automático de tags</div><div class="auto-stats"><span class="stat-pill red">Sodio alto: '+stats.sodio_alto+' comidas</span><span class="stat-pill yellow">Sodio moderado: '+stats.sodio_moderado+' comidas</span><span class="stat-pill red">Sin vegetales: '+stats.sin_vegetales+' comidas</span><span class="stat-pill yellow">Fritos: '+stats.fritos+' comidas</span><span class="stat-pill yellow">Ayuno prolongado: '+stats.ayuno+' días</span><span class="stat-pill green">Proteína: '+stats.dias_proteina+'/'+DATA.dias.length+' días</span><span class="stat-pill green">Vitamina C: '+stats.dias_vitamina_c+'/'+DATA.dias.length+' días</span><span class="stat-pill green">Omega-3: '+stats.dias_omega3+'/'+DATA.dias.length+' días</span><span class="stat-pill green">Double X tomas: '+stats.doublex_tomas+'</span></div></div>';
   html += '<div class="resumen-grid">';
   DATA.resumen.categorias.forEach(function(cat) {
     var badges = Object.keys(cat.evaluacion).map(function(diaId) {
       var dia = DATA.dias.find(function(d){ return d.id === diaId; });
-      var label = dia ? dia.etiqueta.split(" ").slice(0, 2).join(" ") : diaId;
+      var label = dia ? dia.etiqueta.split(" ").slice(0,2).join(" ") : diaId;
       var val = cat.evaluacion[diaId];
-      return '<span class="resumen-badge ' + badgeClass(val) + '">' + label.split(" ")[0].slice(0,3) + ' ' + val + '</span>';
+      return '<span class="resumen-badge '+badgeClass(val)+'">'+label.split(" ")[0].slice(0,3)+' '+val+'</span>';
     }).join("");
-
-    html += '<div class="resumen-row">' +
-      '<div class="resumen-row-top">' +
-        '<div class="resumen-cat">' + cat.nombre + '</div>' +
-        '<div class="resumen-days">' + badges + '</div>' +
-      '</div>' +
-      '<div class="resumen-note">' + cat.nota_claude + '</div>' +
-    '</div>';
+    html += '<div class="resumen-row"><div class="resumen-row-top"><div class="resumen-cat">'+cat.nombre+'</div><div class="resumen-days">'+badges+'</div></div><div class="resumen-note">'+cat.nota_claude+'</div></div>';
   });
   html += "</div></div>";
   return html;
 }
-
 function renderAlertas() {
-  var html = '<div id="alertas"><div class="section-header"><h2>Alertas</h2><div class="section-line"></div></div>';
-  html += '<div class="alert-list">';
-  DATA.alertas.forEach(function(a) {
-    var cls = a.tipo === "good" ? "good" : a.tipo === "info" ? "info" : "";
-    html += '<div class="alert-item ' + cls + '">' +
-      '<div class="alert-icon">' + a.icono + '</div>' +
-      '<div class="alert-text"><strong>' + a.titulo + '</strong><span>' + a.detalle + '</span></div>' +
-    "</div>";
-  });
-  html += "</div></div>";
-  return html;
+  var html = '<div id="alertas"><div class="section-header"><h2>Alertas</h2><div class="section-line"></div></div><div class="alert-list">';
+  DATA.alertas.forEach(function(a) { html += '<div class="alert-item '+(a.tipo==='good'?'good':a.tipo==='info'?'info':'')+'"><div class="alert-icon">'+a.icono+'</div><div class="alert-text"><strong>'+a.titulo+'</strong><span>'+a.detalle+'</span></div></div>'; });
+  html += "</div></div>"; return html;
 }
-
 function renderConsejos() {
-  var html = '<div id="consejos"><div class="section-header"><h2>Consejos</h2><div class="section-line"></div></div>';
-  html += '<div class="consejo-list">';
-  DATA.consejos.forEach(function(c) {
-    html += '<div class="consejo-item"><div class="consejo-emoji">' + c.emoji + '</div><div>' + c.texto + '</div></div>';
-  });
-  html += "</div></div>";
-  return html;
+  var html = '<div id="consejos"><div class="section-header"><h2>Consejos</h2><div class="section-line"></div></div><div class="consejo-list">';
+  DATA.consejos.forEach(function(c) { html += '<div class="consejo-item"><div class="consejo-emoji">'+c.emoji+'</div><div>'+c.texto+'</div></div>'; });
+  html += "</div></div>"; return html;
 }
-
 function renderContexto() {
-  var html = '<div id="contexto"><div class="section-header"><h2>Dieta base</h2><div class="section-line"></div></div>';
-  html += '<div class="context-grid">';
-  html += '<div class="context-row" style="background:rgba(74,222,128,.08)">' +
-    '<div class="context-cell" style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Item</div>' +
-    '<div class="context-cell" style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Descripción</div>' +
-  '</div>';
-  DATA.contexto.forEach(function(row) {
-    html += '<div class="context-row">' +
-      '<div class="context-cell">' + row.label + '</div>' +
-      '<div class="context-cell">' + row.valor + '</div>' +
-    '</div>';
-  });
-  html += "</div></div>";
-  return html;
+  var html = '<div id="contexto"><div class="section-header"><h2>Dieta base</h2><div class="section-line"></div></div><div class="context-grid"><div class="context-row" style="background:rgba(74,222,128,.08)"><div class="context-cell" style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Item</div><div class="context-cell" style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Descripción</div></div>';
+  DATA.contexto.forEach(function(row) { html += '<div class="context-row"><div class="context-cell">'+row.label+'</div><div class="context-cell">'+row.valor+'</div></div>'; });
+  html += "</div></div>"; return html;
 }
-
 function render() {
   document.getElementById("hero-tag").textContent = "Semana " + DATA.meta.semana + " · " + DATA.meta.periodo;
   document.getElementById("hero-meta").textContent = "Actualizado: " + DATA.meta.actualizado + " · " + DATA.meta.ubicacion;
@@ -741,7 +585,6 @@ function render() {
 
 var appState = { view: "dia", diaId: null };
 var CAL_META = { mes: "Abril 2026", primerOffset: 2, totalDias: 30, anio: 2026, mesNum: 4 };
-
 var CAL_MESES = [
   { mes: "Abril 2026",  primerOffset: 2, totalDias: 30, anio: 2026, mesNum: 4 },
   { mes: "Mayo 2026",   primerOffset: 4, totalDias: 31, anio: 2026, mesNum: 5 }
@@ -752,11 +595,7 @@ function calNavMes(dir) {
   var newIdx = calMesIdx + dir;
   if (newIdx < 0 || newIdx >= CAL_MESES.length) return;
   calMesIdx = newIdx;
-  CAL_META.mes = CAL_MESES[calMesIdx].mes;
-  CAL_META.primerOffset = CAL_MESES[calMesIdx].primerOffset;
-  CAL_META.totalDias = CAL_MESES[calMesIdx].totalDias;
-  CAL_META.anio = CAL_MESES[calMesIdx].anio;
-  CAL_META.mesNum = CAL_MESES[calMesIdx].mesNum;
+  CAL_META = Object.assign({}, CAL_MESES[calMesIdx]);
   renderCalendar();
   var prev = document.getElementById("cal-prev");
   var next = document.getElementById("cal-next");
@@ -770,9 +609,7 @@ function buildDiasConData() {
     var parts = d.fecha.split("-");
     var mesNum = parseInt(parts[1], 10);
     var diaNum = parseInt(parts[2], 10);
-    if (mesNum === CAL_META.mesNum) {
-      map[diaNum] = d.id;
-    }
+    if (mesNum === CAL_META.mesNum) map[diaNum] = d.id;
   });
   return map;
 }
@@ -783,51 +620,34 @@ function renderCalendar() {
   var grid = document.getElementById("cal-grid");
   var label = document.getElementById("cal-mes-label");
   var calWrap = document.getElementById("cal-wrap");
-
   calWrap.style.display = (appState.view === "dia") ? "" : "none";
   if (appState.view !== "dia") return;
-
   label.textContent = CAL_META.mes;
-
-  var html = dayNames.map(function(d) {
-    return '<div class="cal-dayname">' + d + '</div>';
-  }).join("");
-
-  for (var i = 0; i < CAL_META.primerOffset; i++) {
-    html += '<div class="cal-day"></div>';
-  }
-
+  var html = dayNames.map(function(d){ return '<div class="cal-dayname">'+d+'</div>'; }).join("");
+  for (var i = 0; i < CAL_META.primerOffset; i++) html += '<div class="cal-day"></div>';
   for (var d = 1; d <= CAL_META.totalDias; d++) {
     var diaId = diasConData[d];
     var isSelected = diaId && appState.diaId === diaId;
     var cls = "cal-day" + (diaId ? " has-data" : "") + (isSelected ? " selected" : "");
-    var click = diaId ? ' onclick="selectDia(\'' + diaId + '\')"' : "";
-    html += '<div class="' + cls + '"' + click + '>' + d + '</div>';
+    var click = diaId ? ' onclick="selectDia(\''+diaId+'\')"' : "";
+    html += '<div class="'+cls+'"'+click+'>'+d+'</div>';
   }
-
   grid.innerHTML = html;
 }
 
 function updateSecNav() {
   var pills = document.querySelectorAll(".sec-pill");
-  pills.forEach(function(p) {
-    p.classList.toggle("active", p.dataset.view === appState.view);
-  });
+  pills.forEach(function(p){ p.classList.toggle("active", p.dataset.view === appState.view); });
 }
 
 function updateView() {
   updateSecNav();
   renderCalendar();
   var app = document.getElementById("app");
-
   if (appState.view === "dia") {
-    if (!appState.diaId) {
-      app.innerHTML = '<div class="empty-state"><span>📅</span>Selecciona un día en el calendario</div>';
-      return;
-    }
-    var dia = DATA.dias.find(function(d) { return d.id === appState.diaId; });
+    if (!appState.diaId) { app.innerHTML = '<div class="empty-state"><span>📅</span>Selecciona un día en el calendario</div>'; return; }
+    var dia = DATA.dias.find(function(d){ return d.id === appState.diaId; });
     app.innerHTML = dia ? renderDia(dia) : '<div class="empty-state"><span>🔍</span>Día no encontrado</div>';
-
   } else if (appState.view === "semana" || appState.view === "mes") {
     app.innerHTML = renderResumen() + renderAlertas() + renderConsejos();
   } else if (appState.view === "contexto") {
@@ -836,86 +656,46 @@ function updateView() {
     app.innerHTML = renderAlertas();
   } else if (appState.view === "consejos") {
     app.innerHTML = renderConsejos();
+  } else if (appState.view === "registro") {
+    app.innerHTML = renderRegistro();
   }
 }
 
 function selectDia(id) {
-  appState.view = "dia";
-  appState.diaId = id;
-  updateView();
-  document.getElementById("cal-prev").disabled = true;
-  setTimeout(function() {
-    var app = document.getElementById("app");
-    if (app) app.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 50);
+  appState.view = "dia"; appState.diaId = id; updateView();
+  setTimeout(function(){ var app = document.getElementById("app"); if (app) app.scrollIntoView({behavior:"smooth",block:"start"}); }, 50);
 }
-
 function setView(v) {
-  appState.view = v;
-  appState.diaId = null;
-  updateView();
-  setTimeout(function() {
-    var app = document.getElementById("app");
-    if (app) app.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 50);
+  appState.view = v; appState.diaId = null; updateView();
+  setTimeout(function(){ var app = document.getElementById("app"); if (app) app.scrollIntoView({behavior:"smooth",block:"start"}); }, 50);
 }
 
-// ─────────────────────────────────────────────
-//  EXPORT CSV — Corregido para evitar error de sintaxis
-// ─────────────────────────────────────────────
 function exportCSV() {
   var rows = [["Fecha","Día","Comida","Hora","Alimentos","Tags cubierto","Tags atención","Tags contexto","Suplementos","Nota"]];
   DATA.dias.forEach(function(dia) {
     dia.comidas.forEach(function(c) {
-      rows.push([
-        dia.fecha,
-        dia.etiqueta,
-        c.titulo,
-        c.hora,
-        c.alimentos.join(" | "),
-        c.tags.cubierto.map(labelTag).join(" | "),
-        c.tags.atencion.map(labelTag).join(" | "),
-        c.tags.contexto.map(labelTag).join(" | "),
-        c.tags.suplementos.map(labelTag).join(" | "),
-        c.nota || ""
-      ]);
+      rows.push([dia.fecha, dia.etiqueta, c.titulo, c.hora, c.alimentos.join(" | "), c.tags.cubierto.map(labelTag).join(" | "), c.tags.atencion.map(labelTag).join(" | "), c.tags.contexto.map(labelTag).join(" | "), c.tags.suplementos.map(labelTag).join(" | "), c.nota || ""]);
     });
   });
-  var csv = rows.map(function(r) {
-    return r.map(function(cell) {
-      return '"' + String(cell).replace(/"/g, '""') + '"';
-    }).join(",");
-  }).join("\n");
-  
+  var csv = rows.map(function(r){ return r.map(function(cell){ return '"'+String(cell).replace(/"/g,'""')+'"'; }).join(","); }).join("\n");
   var bom = "\uFEFF";
-  var blob = new Blob([bom + csv], {type: "text/csv;charset=utf-8;"});
+  var blob = new Blob([bom + csv], {type:"text/csv;charset=utf-8;"});
   var url = URL.createObjectURL(blob);
   var el = document.createElement("a");
-  el.href = url;
-  el.download = "registro_nutricional_s" + String(DATA.meta.semana).padStart(2,"0") + ".csv";
-  document.body.appendChild(el);
-  el.click();
-  document.body.removeChild(el);
-  URL.revokeObjectURL(url);
+  el.href = url; el.download = "registro_nutricional_s"+String(DATA.meta.semana).padStart(2,"0")+".csv";
+  document.body.appendChild(el); el.click(); document.body.removeChild(el); URL.revokeObjectURL(url);
 }
 
 function toggle(h) { h.parentElement.classList.toggle("open"); }
 
 window.onload = async function() {
   render();
-
   var pills = document.querySelectorAll(".sec-pill");
-  pills.forEach(function(p) {
-    p.onclick = function() { setView(p.dataset.view); };
-  });
-
+  pills.forEach(function(p){ p.onclick = function(){ setView(p.dataset.view); }; });
   var ok = await cargarRegistros();
   if (!ok || DATA.dias.length === 0) return;
-
   var ultimo = DATA.dias[DATA.dias.length - 1];
-  appState.diaId = ultimo.id;
-  appState.view = "dia";
-  updateView();
+  appState.diaId = ultimo.id; appState.view = "dia"; updateView();
 };
 </script>
 </body>
