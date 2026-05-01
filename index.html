@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registro Nutricional v19</title>
+<title>Registro Nutricional v20</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2435;--border:#2a3045;--text:#e8eaf0;--muted:#6b7280;--green:#4ade80;--green-bg:#052e16;--yellow:#fbbf24;--yellow-bg:#1c1400;--red:#f87171;--red-bg:#2d0a0a;--blue:#60a5fa;--blue-bg:#0a1628;--purple:#c084fc;--purple-bg:#1a0a2e;--orange:#fb923c;--accent:#4ade80;}
@@ -66,8 +66,6 @@ main{padding:1.25rem;max-width:680px;margin:0 auto;}
 .badge-yellow{background:var(--yellow-bg);color:var(--yellow);}
 .badge-red{background:var(--red-bg);color:var(--red);}
 .badge-gray{background:var(--surface2);color:var(--muted);}
-.resumen-note{font-size:11px;color:var(--muted);}
-/* contadores automáticos */
 .auto-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05);}
 .stat-pill{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
 .stat-pill.red{background:rgba(248,113,113,.08);color:var(--red);border-color:rgba(248,113,113,.2);}
@@ -82,7 +80,6 @@ main{padding:1.25rem;max-width:680px;margin:0 auto;}
 .consejo-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;display:flex;gap:10px;}
 .consejo-emoji{font-size:1.1rem;flex-shrink:0;}
 footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border);color:var(--muted);font-size:12px;}
-/* ── Calendar & secondary nav ── */
 .secondary-nav{overflow-x:auto;display:flex;gap:6px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);scrollbar-width:none;background:var(--surface);position:sticky;top:0;z-index:100;align-items:center;}
 .secondary-nav::-webkit-scrollbar{display:none;}
 .nav-divider{width:1px;height:14px;background:var(--border);flex-shrink:0;margin:0 2px;}
@@ -102,6 +99,37 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
 .cal-arrow{background:none;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1.3rem;line-height:1;transition:all .2s;}
 .cal-arrow:hover{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.4);color:var(--green);}
 .cal-arrow:disabled{opacity:.25;cursor:default;}
+
+/* ── REGISTRO FORM ── */
+#registro-view{padding:0;}
+.registro-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem;}
+.registro-form-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.registro-form-header .form-icon{width:34px;height:34px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.registro-form-header .form-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:#fff;}
+.registro-form-header .form-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+.registro-form-body{padding:18px;}
+.csv-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:block;}
+.csv-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',monospace;font-size:12px;padding:12px 14px;resize:vertical;min-height:90px;line-height:1.5;transition:border-color .2s;outline:none;}
+.csv-textarea:focus{border-color:rgba(74,222,128,.5);box-shadow:0 0 0 3px rgba(74,222,128,.07);}
+.csv-textarea::placeholder{color:var(--muted);opacity:.6;}
+.csv-hint{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5;}
+.csv-hint code{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:monospace;color:#93c5fd;font-size:10px;}
+.form-actions{display:flex;align-items:center;gap:10px;margin-top:14px;}
+.btn-submit{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);color:var(--green);padding:10px 22px;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.btn-submit:hover{background:rgba(74,222,128,.25);}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed;}
+.btn-clear{background:none;border:1px solid var(--border);color:var(--muted);padding:10px 16px;border-radius:24px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.btn-clear:hover{border-color:rgba(248,113,113,.4);color:var(--red);}
+.form-status{margin-top:12px;padding:10px 14px;border-radius:10px;font-size:13px;display:none;}
+.form-status.ok{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--green);display:flex;gap:8px;align-items:flex-start;}
+.form-status.err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);display:flex;gap:8px;align-items:flex-start;}
+.form-status.sending{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);color:var(--blue);display:flex;gap:8px;align-items:center;}
+.registro-tips{display:flex;flex-direction:column;gap:8px;}
+.tip-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);display:flex;gap:9px;align-items:flex-start;}
+.tip-card .tip-icon{flex-shrink:0;font-size:.95rem;margin-top:1px;}
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:14px;height:14px;border:2px solid rgba(96,165,250,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -122,7 +150,10 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
   <button class="sec-pill" data-view="contexto">Contexto</button>
   <button class="sec-pill" data-view="alertas">Alertas</button>
   <button class="sec-pill" data-view="consejos">Consejos</button>
+  <div class="nav-divider"></div>
+  <button class="sec-pill" data-view="registro">✏️ Registrar</button>
 </nav>
+
 <div class="cal-wrap" id="cal-wrap">
   <div class="cal-header"><button class="cal-arrow" id="cal-prev" onclick="calNavMes(-1)">&#x2039;</button><span class="cal-mes" id="cal-mes-label"></span><button class="cal-arrow" id="cal-next" onclick="calNavMes(1)">&#x203A;</button></div>
   <div class="cal-grid" id="cal-grid"></div>
@@ -130,14 +161,16 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
 
 <main id="app"></main>
 
+<!-- iframe oculto: receptor silencioso del submit de Google Forms -->
+<iframe name="hidden_iframe_gform" id="hidden_iframe_gform" style="display:none;" onload="onIframeLoad()"></iframe>
+
 <footer>
-  <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; v19 · Google Sheets</p>
+  <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; v20 · Google Sheets</p>
 </footer>
 
 <script>
 // ─────────────────────────────────────────────
-//  CATÁLOGO DE TAGS — vocabulario canónico
-//  Claude siempre usa estas keys exactas
+//  CATÁLOGO DE TAGS
 // ─────────────────────────────────────────────
 const TAG_CATALOG = {
   proteina:               { label: "Proteína",               cat: "macro"     },
@@ -155,8 +188,8 @@ const TAG_CATALOG = {
   vitamina_k:             { label: "Vitamina K",              cat: "vitamina" },
   colina:                 { label: "Colina",                  cat: "vitamina" },
   folato:                 { label: "Folato",                  cat: "vitamina" },
-  biotina:                { label: "Biotina",                 cat: "vitamina" },  
-  vitamina_b1:            { label: "Vitamina B1",             cat: "vitamina" },  
+  biotina:                { label: "Biotina",                 cat: "vitamina" },
+  vitamina_b1:            { label: "Vitamina B1",             cat: "vitamina" },
   calcio:                 { label: "Calcio",                  cat: "mineral"  },
   hierro_hemo:            { label: "Hierro hemo",             cat: "mineral"  },
   hierro_vegetal:         { label: "Hierro vegetal",          cat: "mineral"  },
@@ -166,17 +199,17 @@ const TAG_CATALOG = {
   yodo:                   { label: "Yodo",                    cat: "mineral"  },
   zinc:                   { label: "Zinc",                    cat: "mineral"  },
   cobre:                  { label: "Cobre",                   cat: "mineral"  },
-  cromo:                  { label: "Cromo",                   cat: "mineral"  },  
-  manganeso:              { label: "Manganeso",               cat: "mineral"  },  
-  fosforo:                { label: "Fósforo",                 cat: "mineral"  },  
+  cromo:                  { label: "Cromo",                   cat: "mineral"  },
+  manganeso:              { label: "Manganeso",               cat: "mineral"  },
+  fosforo:                { label: "Fósforo",                 cat: "mineral"  },
   probioticos:            { label: "Probióticos",             cat: "funcional"},
   prebioticos:            { label: "Prebióticos",             cat: "funcional"},
   antioxidantes:          { label: "Antioxidantes",           cat: "funcional"},
   antiinflamatorio:       { label: "Antiinflamatorio",        cat: "funcional"},
   hidratacion:            { label: "Hidratación",             cat: "funcional"},
   enzimas_digestivas:     { label: "Enzimas digestivas",      cat: "funcional"},
-  polifenoles:            { label: "Polifenoles",             cat: "funcional"},  
-  colageno:               { label: "Colágeno",                cat: "funcional"},  
+  polifenoles:            { label: "Polifenoles",             cat: "funcional"},
+  colageno:               { label: "Colágeno",                cat: "funcional"},
   allicina:               { label: "Allicina",                cat: "bioactivo"},
   capsaicina:             { label: "Capsaicina",              cat: "bioactivo"},
   glucosinolatos:         { label: "Glucosinolatos",          cat: "bioactivo"},
@@ -207,13 +240,13 @@ const TAG_CATALOG = {
 };
 
 // ─────────────────────────────────────────────
-//  DATA — modificar solo este bloque cada semana
+//  DATA
 // ─────────────────────────────────────────────
 const DATA = {
   meta: {
     semana: 1,
     periodo: "17 abr – 28 abr 2026",
-    version: "v18",
+    version: "v20",
     actualizado: "Mar 28 abr 2026 · 21:50",
     ubicacion: "Cancún / Puerto Morelos"
   },
@@ -227,7 +260,7 @@ const DATA = {
     { label: "Déficit crónico",    valor: "Frutas frescas de día, verduras de hoja, vegetales en general" },
     { label: "Tiendas",            valor: "Costco, Walmart, Chedraui, Super Aki (Cancún / Puerto Morelos)" }
   ],
-  dias: [], 
+  dias: [],
   resumen: {
     categorias: [
       {
@@ -238,22 +271,22 @@ const DATA = {
       {
         id: "vegetales", nombre: "Vegetales",
         evaluacion: { vie17:"AUSENTE", sab18:"BIEN", dom19:"EXCELENTE", lun20:"PARCIAL", mar21:"AUSENTE", mie22:"EXCELENTE", jue23:"EXCELENTE", vie24:"AUSENTE", sab25:"EXCELENTE", dom26:"AUSENTE", lun27:"EXCELENTE" },
-        nota_claude: "Patrón claro: excelentes en días de comida elaborada, ausentes en días ligeros. Lun27 rompe el patrón definitivamente: espinacas + jitomate + zanahoria (desayuno) + estofado + jícama + pepino (comida) + nopalitos + cebolla (cena)."
+        nota_claude: "Patrón claro: excelentes en días de comida elaborada, ausentes en días ligeros. Lun27 rompe el patrón definitivamente."
       },
       {
         id: "vitamina_c", nombre: "Vitamina C",
         evaluacion: { vie17:"PARCIAL", sab18:"BIEN", dom19:"BIEN", lun20:"PARCIAL", mar21:"PARCIAL", mie22:"PARCIAL", jue23:"EXCELENTE", vie24:"BIEN", sab25:"EXCELENTE", dom26:"PARCIAL", lun27:"EXCELENTE" },
-        nota_claude: "Lun27: kiwi + jitomate + zanahoria + naranja + limones de limonada = cinco fuentes de vitamina C. Máximo histórico del registro."
+        nota_claude: "Lun27: kiwi + jitomate + zanahoria + naranja + limones de limonada = cinco fuentes. Máximo histórico del registro."
       },
       {
         id: "fibra", nombre: "Fibra vegetal",
         evaluacion: { vie17:"PARCIAL", sab18:"BIEN", dom19:"BIEN", lun20:"PARCIAL", mar21:"BIEN", mie22:"EXCELENTE", jue23:"EXCELENTE", vie24:"BIEN", sab25:"EXCELENTE", dom26:"PARCIAL", lun27:"EXCELENTE" },
-        nota_claude: "Lun27: espinacas + zanahoria + kiwi + garbanzos + jícama + pepino + nopalitos (mucílago) = mejor día de fibra del registro por amplio margen."
+        nota_claude: "Lun27: espinacas + zanahoria + kiwi + garbanzos + jícama + pepino + nopalitos = mejor día de fibra del registro."
       },
       {
         id: "sodio", nombre: "Sodio",
         evaluacion: { vie17:"MODERADO", sab18:"ALTO", dom19:"MODERADO", lun20:"ALTO", mar21:"MODERADO", mie22:"ALTO", jue23:"ALTO", vie24:"MODERADO", sab25:"MUY_ALTO", dom26:"MODERADO", lun27:"MODERADO" },
-        nota_claude: "Patrón sostenido: latas, embutidos y comida fuera son las fuentes principales. Hoy: solo la sal en cocción."
+        nota_claude: "Patrón sostenido: latas, embutidos y comida fuera son las fuentes principales."
       },
       {
         id: "grasas", nombre: "Grasas saludables",
@@ -264,29 +297,29 @@ const DATA = {
   },
   alertas: [
     { tipo: "warn", icono: "⚠️", titulo: "Sodio crónico elevado",        detalle: "9 de 11 días con sodio moderado o alto. Fuentes: latas, embutidos, salsas comerciales, snacks de cine." },
-    { tipo: "good", icono: "🥦", titulo: "Brócoli: primera vez en el registro (mar28)", detalle: "El vegetal crucífero más completo — vitamina C, K, folato y sulforafano (compuesto anticancerígeno). Dos pescados en una noche: tilapia + salmón. Mar28 cierra como uno de los mejores días del registro en variedad proteica y vegetal." },
-    { tipo: "good", icono: "🍊", titulo: "Vitamina C en 5 fuentes distintas — lun27", detalle: "Kiwi + jitomate + zanahoria (desayuno) + naranja (comida) + limones de limonada (cena). Máximo histórico del registro. Hierro vegetal del día aprovechado al máximo." },
-    { tipo: "good", icono: "✅", titulo: "Proteína impecable",            detalle: "11 días sin excepción. Fuentes variadas: huevo, pollo, pescado, frijoles, amaranto, atún, espinacas." },
-    { tipo: "good", icono: "✅", titulo: "Consejos aplicados al comportamiento real", detalle: "3 instancias documentadas: aguacate+agua post-jamón (jue23), plátano post-cine (sab25), fruta fresca de día (lun27)." },
-    { tipo: "info", icono: "📈", titulo: "Tendencia positiva sostenida",  detalle: "Los últimos 4 días del registro son los mejores del período. Lun27 es el desayuno más completo en vegetales de todo el registro." }
+    { tipo: "good", icono: "🥦", titulo: "Brócoli: primera vez en el registro (mar28)", detalle: "El vegetal crucífero más completo — vitamina C, K, folato y sulforafano. Dos pescados en una noche: tilapia + salmón." },
+    { tipo: "good", icono: "🍊", titulo: "Vitamina C en 5 fuentes distintas — lun27", detalle: "Kiwi + jitomate + zanahoria + naranja + limones. Máximo histórico del registro." },
+    { tipo: "good", icono: "✅", titulo: "Proteína impecable",            detalle: "11 días sin excepción. Fuentes variadas: huevo, pollo, pescado, frijoles, amaranto, atún." },
+    { tipo: "good", icono: "✅", titulo: "Consejos aplicados al comportamiento real", detalle: "3 instancias documentadas: aguacate+agua post-jamón, plátano post-cine, fruta fresca de día." },
+    { tipo: "info", icono: "📈", titulo: "Tendencia positiva sostenida",  detalle: "Los últimos 4 días son los mejores del período. Lun27 es el desayuno más completo en vegetales." }
   ],
   consejos: [
-    { emoji: "🥕", texto: "Zanahoria o espinaca en días ligeros: si el día es de comida simple (huevo + frijoles), una zanahoria o un puñado de espinacas cubre vitamina A y K sin esfuerzo." },
-    { emoji: "🍊", texto: "Una fruta fresca durante el día: naranja, kiwi o toronja — no en el bowl nocturno. La vitamina C en ayunas o con la comida principal mejora la absorción de hierro de los frijoles." },
-    { emoji: "🥫", texto: "Frijoles de olla > lata: una olla semanal elimina el sodio de las latas sin cambiar el hábito de consumo. Considerando que los frijoles aparecen casi a diario, el impacto es significativo." },
-    { emoji: "🌿", texto: "Salsa casera vs comercial: jitomate + chile + cilantro licuados = mismo sabor que La Costeña, cero sodio. Ya fue identificado como tip — pendiente aplicar." },
-    { emoji: "💧", texto: "Hidratación activa: el agua aparece principalmente como reacción al sodio alto (post-cine, post-jamón). Incorporarla proactivamente durante el día." },
-    { emoji: "🌵", texto: "Nopalitos: incorpóralos regularmente. Son uno de los vegetales más completos y baratos de México — fibra soluble (mucílago), calcio vegetal, vitamina C y regulación de glucosa postprandial. En taco o ensalada, disponibles en cualquier Super Aki o Chedraui." },
-    { emoji: "🥩", texto: "Arrachera a la plancha sin aceite extra es una de las mejores preparaciones del registro: hierro hemo de alta calidad, zinc, B12 y sin frituras. Úsala como referencia para noches con tacos." },
-    { emoji: "🥦", texto: "Brócoli empapelado con pescado es una fórmula a repetir: conserva el sulforafano mejor que hervido, vitamina C intacta, y combina perfecto con cualquier filete. Disponible en Costco y Walmart a buen precio." },
-    { emoji: "🐟", texto: "Dos pescados en una comida (tilapia + salmón) es el mayor aporte de omega-3 del registro. El salmón en particular tiene astaxantina — uno de los antioxidantes más potentes de origen animal. Incorporarlo una vez por semana ya marca diferencia." }
+    { emoji: "🥕", texto: "Zanahoria o espinaca en días ligeros: una zanahoria o un puñado de espinacas cubre vitamina A y K sin esfuerzo." },
+    { emoji: "🍊", texto: "Una fruta fresca durante el día: naranja, kiwi o toronja — no en el bowl nocturno. La vitamina C mejora la absorción de hierro de los frijoles." },
+    { emoji: "🥫", texto: "Frijoles de olla > lata: una olla semanal elimina el sodio de las latas sin cambiar el hábito de consumo." },
+    { emoji: "🌿", texto: "Salsa casera vs comercial: jitomate + chile + cilantro licuados = mismo sabor, cero sodio." },
+    { emoji: "💧", texto: "Hidratación activa: incorporarla proactivamente durante el día, no solo como reacción al sodio alto." },
+    { emoji: "🌵", texto: "Nopalitos: fibra soluble, calcio vegetal, vitamina C y regulación de glucosa postprandial. Disponibles en cualquier Super Aki o Chedraui." },
+    { emoji: "🥩", texto: "Arrachera a la plancha sin aceite extra: hierro hemo de alta calidad, zinc, B12 y sin frituras." },
+    { emoji: "🥦", texto: "Brócoli empapelado con pescado: conserva el sulforafano mejor que hervido, vitamina C intacta." },
+    { emoji: "🐟", texto: "Salmón tiene astaxantina — uno de los antioxidantes más potentes de origen animal. Incorporarlo una vez por semana ya marca diferencia." }
   ]
 };
 
 // ─────────────────────────────────────────────
-//  GOOGLE SHEETS — carga dinámica de registros
+//  GOOGLE SHEETS — carga dinámica
 // ─────────────────────────────────────────────
-var SHEET_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
+var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
 
 // ─────────────────────────────────────────────
 //  GOOGLE FORM — embed nativo
