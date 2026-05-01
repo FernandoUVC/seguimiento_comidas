@@ -288,6 +288,117 @@ const DATA = {
 // ─────────────────────────────────────────────
 var SHEET_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
 
+// ─────────────────────────────────────────────
+//  GOOGLE FORM — embed nativo
+//  action: URL real de tu form (formResponse)
+//  entry:  ID del campo extraído del DOM de Google Forms
+// ─────────────────────────────────────────────
+var GFORM_ACTION  = 'https://docs.google.com/forms/d/e/1FAIpQLSedGj3P5bP3t3n-ezENOUDx3dEqWlRSqinpaL1mDPUIEyx1xg/formResponse';
+var GFORM_ENTRY   = 'entry.1464657122';
+
+// Estado del form
+var formState = { submitted: false, sending: false };
+
+function onIframeLoad() {
+  // El iframe carga una vez al inicio (vacío) y luego al recibir el redirect de Google.
+  // Solo reaccionamos si realmente enviamos algo.
+  if (!formState.sending) return;
+  formState.sending = false;
+  formState.submitted = true;
+  showFormStatus('ok', '✅ Registro enviado. El Sheet se actualizará en unos segundos.');
+  document.getElementById('csv-input').value = '';
+  document.getElementById('btn-submit').disabled = false;
+  document.getElementById('btn-submit').textContent = '↑ Enviar';
+}
+
+function showFormStatus(type, msg) {
+  var el = document.getElementById('form-status');
+  el.className = 'form-status ' + type;
+  if (type === 'sending') {
+    el.innerHTML = '<div class="spinner"></div><span>' + msg + '</span>';
+  } else {
+    el.innerHTML = msg;
+  }
+}
+
+function submitGForm() {
+  var csv = document.getElementById('csv-input').value.trim();
+  if (!csv) {
+    showFormStatus('err', '⚠️ Pega el CSV antes de enviar.');
+    return;
+  }
+
+  // Rellena el input oculto del form real
+  document.getElementById('gform-entry').value = csv;
+
+  formState.sending = true;
+  formState.submitted = false;
+
+  showFormStatus('sending', 'Enviando al Sheet…');
+  document.getElementById('btn-submit').disabled = true;
+  document.getElementById('btn-submit').textContent = 'Enviando…';
+
+  // Submit apunta al iframe oculto — la página no recarga
+  document.getElementById('gform-real').submit();
+
+  // Timeout de seguridad: si el iframe no responde en 8s, asumimos éxito
+  // (Google Forms a veces no dispara onload en cross-origin)
+  setTimeout(function() {
+    if (formState.sending) {
+      formState.sending = false;
+      showFormStatus('ok', '✅ Enviado (sin confirmación de red — verifica el Sheet en ~30 s).');
+      document.getElementById('csv-input').value = '';
+      document.getElementById('btn-submit').disabled = false;
+      document.getElementById('btn-submit').textContent = '↑ Enviar';
+    }
+  }, 8000);
+}
+
+function renderRegistro() {
+  return '<div id="registro-view">' +
+    '<div class="section-header"><h2>Registrar comida</h2><div class="section-line"></div></div>' +
+
+    '<div class="registro-wrap">' +
+      '<div class="registro-form-header">' +
+        '<div class="form-icon">✏️</div>' +
+        '<div><div class="form-title">Nueva entrada CSV</div>' +
+        '<div class="form-sub">Se enviará directo al Sheet vía Google Forms</div></div>' +
+      '</div>' +
+      '<div class="registro-form-body">' +
+        '<label class="csv-label" for="csv-input">Fila CSV</label>' +
+        '<textarea id="csv-input" class="csv-textarea" rows="4" ' +
+          'placeholder="2026-04-29,lun29,Lunes 29 Abr,Desayuno sólido · huevo + frijoles,desayuno,Desayuno,08:00,🍳,Huevo revuelto|Frijoles de olla,proteina|hierro_vegetal,sodio_moderado,comida_elaborada,,"></textarea>' +
+        '<div class="csv-hint">Formato: <code>fecha,diaId,etiqueta,resumen,comidaId,titulo,hora,icono,alimentos(|),cubierto(|),atencion(|),contexto(|),suplementos(|),nota</code></div>' +
+        '<div class="form-actions">' +
+          '<button class="btn-submit" id="btn-submit" onclick="submitGForm()">↑ Enviar</button>' +
+          '<button class="btn-clear" onclick="document.getElementById(\'csv-input\').value=\'\';document.getElementById(\'form-status\').className=\'form-status\';">Limpiar</button>' +
+        '</div>' +
+        '<div class="form-status" id="form-status"></div>' +
+      '</div>' +
+    '</div>' +
+
+    // Form real oculto — apunta al iframe silencioso
+    '<form id="gform-real" ' +
+      'action="' + GFORM_ACTION + '" ' +
+      'method="POST" ' +
+      'target="hidden_iframe_gform" ' +
+      'style="display:none;">' +
+      '<input type="text" id="gform-entry" name="' + GFORM_ENTRY + '" value="">' +
+    '</form>' +
+
+    '<div class="section-header" style="margin-top:1.5rem"><h2>Referencia rápida</h2><div class="section-line"></div></div>' +
+    '<div class="registro-tips">' +
+      '<div class="tip-card"><div class="tip-icon">📋</div><div><strong style="font-size:12px;color:var(--text)">Columnas (14 en total)</strong><br>' +
+        '1 fecha · 2 diaId · 3 etiqueta · 4 resumen_dia · 5 comidaId · 6 titulo · 7 hora · 8 icono · 9 alimentos · 10 cubierto · 11 atención · 12 contexto · 13 suplementos · 14 nota</div></div>' +
+      '<div class="tip-card"><div class="tip-icon">🔗</div><div><strong style="font-size:12px;color:var(--text)">Separador de listas</strong><br>' +
+        'Usa <code style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-size:10px;color:#93c5fd">|</code> para múltiples alimentos o tags dentro de una celda.</div></div>' +
+      '<div class="tip-card"><div class="tip-icon">⏱️</div><div><strong style="font-size:12px;color:var(--text)">Latencia del Sheet</strong><br>' +
+        'El App Script procesa la fila en ~10–30 segundos. Recarga la vista Día para ver el nuevo registro.</div></div>' +
+    '</div>' +
+  '</div>';
+}
+
+  
 function parseCSVText(text) {
   var rows = [], row = [], cell = '', inQ = false;
   for (var i = 0; i < text.length; i++) {
