@@ -319,8 +319,9 @@ const DATA = {
 // ─────────────────────────────────────────────
 //  GOOGLE SHEETS — carga dinámica
 // ─────────────────────────────────────────────
-var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
-
+var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=1969338442&single=true&output=csv';
+const ALERTAS_CSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=1680934207&single=true&output=csv';
+const CONSEJOS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=160987466&single=true&output=csv';
 // ─────────────────────────────────────────────
 //  GOOGLE FORM — embed nativo
 //  action: URL real de tu form (formResponse)
@@ -494,7 +495,45 @@ async function cargarRegistros() {
     return false;
   }
 }
+async function cargarAlertas() {
+  try {
+    var res = await fetch(ALERTAS_CSV);
+    if (!res.ok) return;
+    var text = await res.text();
+    var rows = parseCSVText(text).slice(2);
+    DATA.alertas = rows
+      .filter(function(r) { return r[0]; })
+      .map(function(r) {
+        return {
+          tipo:    (r[0] || '').trim(),
+          icono:   (r[1] || '').trim(),
+          titulo:  (r[2] || '').trim(),
+          detalle: (r[3] || '').trim()
+        };
+      });
+  } catch(e) {
+    console.error('[Alertas] Error:', e);
+  }
+}
 
+async function cargarConsejos() {
+  try {
+    var res = await fetch(CONSEJOS_CSV);
+    if (!res.ok) return;
+    var text = await res.text();
+    var rows = parseCSVText(text).slice(2);
+    DATA.consejos = rows
+      .filter(function(r) { return r[0]; })
+      .map(function(r) {
+        return {
+          emoji: (r[0] || '').trim(),
+          texto: (r[1] || '').trim()
+        };
+      });
+  } catch(e) {
+    console.error('[Consejos] Error:', e);
+  }
+}
 function contarTagAtencion(tagKey) {
   var count = 0;
   DATA.dias.forEach(function(dia) { dia.comidas.forEach(function(comida) { if (comida.tags.atencion.indexOf(tagKey) !== -1) count++; }); });
@@ -692,7 +731,13 @@ window.onload = async function() {
   render();
   var pills = document.querySelectorAll(".sec-pill");
   pills.forEach(function(p){ p.onclick = function(){ setView(p.dataset.view); }; });
-  var ok = await cargarRegistros();
+
+  const [ok] = await Promise.all([
+    cargarRegistros(),
+    cargarAlertas(),
+    cargarConsejos()
+  ]);
+
   if (!ok || DATA.dias.length === 0) return;
   var ultimo = DATA.dias[DATA.dias.length - 1];
   appState.diaId = ultimo.id; appState.view = "dia"; updateView();
