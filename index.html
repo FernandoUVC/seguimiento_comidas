@@ -150,10 +150,11 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
   <button class="sec-pill" data-view="contexto">Contexto</button>
   <button class="sec-pill" data-view="alertas">Alertas</button>
   <button class="sec-pill" data-view="consejos">Consejos</button>
+  <button class="sec-pill" data-view="analisis">🔍 Análisis</button>
   <div class="nav-divider"></div>
   <button class="sec-pill" data-view="registro">✏️ Registrar</button>
 </nav>
-
+  
 <div class="cal-wrap" id="cal-wrap">
   <div class="cal-header"><button class="cal-arrow" id="cal-prev" onclick="calNavMes(-1)">&#x2039;</button><span class="cal-mes" id="cal-mes-label"></span><button class="cal-arrow" id="cal-next" onclick="calNavMes(1)">&#x203A;</button></div>
   <div class="cal-grid" id="cal-grid"></div>
@@ -477,7 +478,60 @@ function csvRowsToDias(rows) {
   }
   return diasOrder.map(function(id){ return diasMap[id]; });
 }
+function prepararAnalisis() {
+  var nivel = document.getElementById('analisis-nivel').value;
+  var periodo = document.getElementById('analisis-periodo').value;
+  var hoy = new Date();
+  var desde = new Date();
 
+  if (periodo === 'hoy') { desde = new Date(hoy); }
+  else if (periodo === 'semana') { desde.setDate(hoy.getDate() - 7); }
+  else if (periodo === 'mes') { desde.setDate(hoy.getDate() - 30); }
+  else if (periodo === 'tres_meses') { desde.setDate(hoy.getDate() - 90); }
+
+  var diasFiltrados = DATA.dias.filter(function(dia) {
+    var f = new Date(dia.fecha);
+    return f >= desde && f <= hoy;
+  });
+
+  if (diasFiltrados.length === 0) {
+    document.getElementById('analisis-output').value = 'No hay registros en este periodo.';
+    return;
+  }
+
+  var lineas = [];
+  lineas.push('=== ANÁLISIS NUTRICIONAL ===');
+  lineas.push('Periodo: ' + periodo + ' | Nivel: ' + nivel);
+  lineas.push('Días analizados: ' + diasFiltrados.length);
+  lineas.push('');
+
+  diasFiltrados.forEach(function(dia) {
+    lineas.push('── ' + dia.etiqueta + ' (' + dia.fecha + ')');
+    dia.comidas.forEach(function(c) {
+      var linea = '  [' + c.hora + '] ' + c.titulo;
+      if (nivel === 'minimo') {
+        linea += ' | cubierto: ' + c.tags.cubierto.join(', ');
+        linea += ' | atencion: ' + c.tags.atencion.join(', ');
+      } else if (nivel === 'recomendado') {
+        linea += ' | alimentos: ' + c.alimentos.join(', ');
+        linea += ' | cubierto: ' + c.tags.cubierto.join(', ');
+        linea += ' | atencion: ' + c.tags.atencion.join(', ');
+        linea += ' | contexto: ' + c.tags.contexto.join(', ');
+      } else if (nivel === 'completo') {
+        linea += ' | alimentos: ' + c.alimentos.join(', ');
+        linea += ' | cubierto: ' + c.tags.cubierto.join(', ');
+        linea += ' | atencion: ' + c.tags.atencion.join(', ');
+        linea += ' | contexto: ' + c.tags.contexto.join(', ');
+        linea += ' | suplementos: ' + c.tags.suplementos.join(', ');
+        if (c.nota) linea += ' | nota: ' + c.nota;
+      }
+      lineas.push(linea);
+    });
+    lineas.push('');
+  });
+
+  document.getElementById('analisis-output').value = lineas.join('\n');
+}
 async function cargarRegistros() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
