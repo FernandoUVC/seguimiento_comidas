@@ -120,6 +120,8 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
 .btn-submit:disabled{opacity:.4;cursor:not-allowed;}
 .btn-clear{background:none;border:1px solid var(--border);color:var(--muted);padding:10px 16px;border-radius:24px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
 .btn-clear:hover{border-color:rgba(248,113,113,.4);color:var(--red);}
+.btn-revisar{background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;padding:10px 16px;border-radius:24px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.btn-revisar:hover{background:#60a5fa33;border-color:#60a5fa66;}
 .form-status{margin-top:12px;padding:10px 14px;border-radius:10px;font-size:13px;display:none;}
 .form-status.ok{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--green);display:flex;gap:8px;align-items:flex-start;}
 .form-status.err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);display:flex;gap:8px;align-items:flex-start;}
@@ -402,8 +404,9 @@ function renderRegistro() {
         '<textarea id="csv-input" class="csv-textarea" rows="4" ' +
           'placeholder="2026-04-29,lun29,Lunes 29 Abr,Desayuno sólido · huevo + frijoles,desayuno,Desayuno,08:00,🍳,Huevo revuelto|Frijoles de olla,proteina|hierro_vegetal,sodio_moderado,comida_elaborada,,"></textarea>' +
         '<div class="csv-hint">Formato: <code>fecha,diaId,etiqueta,resumen,comidaId,titulo,hora,icono,alimentos(|),cubierto(|),atencion(|),contexto(|),suplementos(|),nota</code></div>' +
-        '<div class="form-actions">' +
+         '<div class="form-actions">' +
           '<button class="btn-submit" id="btn-submit" onclick="submitGForm()">↑ Enviar</button>' +
+          '<button class="btn-revisar" onclick="abrirRevisar()">🔍 Revisar</button>' +
           '<button class="btn-clear" onclick="document.getElementById(\'csv-input\').value=\'\';document.getElementById(\'form-status\').className=\'form-status\';">Limpiar</button>' +
         '</div>' +
         '<div class="form-status" id="form-status"></div>' +
@@ -697,6 +700,300 @@ window.onload = async function() {
   var ultimo = DATA.dias[DATA.dias.length - 1];
   appState.diaId = ultimo.id; appState.view = "dia"; updateView();
 };
+// ─── MÓDULO REVISAR ────────────────────────────────────────────────
+const RV_TAG_CATALOG = {
+  macro:      { label:'Macronutrientes',   tags:['proteina','fibra','grasas_saludables','grasas_mono','omega3','carbohidratos_integrales','grasas_saturadas','azucar_alta'] },
+  vitamina:   { label:'Vitaminas',         tags:['vitamina_a','vitamina_b1','vitamina_b2','vitamina_b3','vitamina_b6','vitamina_b12','vitamina_c','vitamina_d','vitamina_e','vitamina_k','folato','biotina','colina'] },
+  mineral:    { label:'Minerales',         tags:['calcio','hierro_hemo','hierro_vegetal','magnesio','potasio','zinc','selenio','yodo','cobre','manganeso','fosforo','cromo'] },
+  funcional:  { label:'Funcional',         tags:['probioticos','prebioticos','antioxidantes','antiinflamatorio','curcumina','capsaicina','glucosinolatos','allicin','polifenoles','enzimas_digestivas','hidratacion'] },
+  atencion:   { label:'Atención / Alerta', tags:['sodio_alto','sodio_moderado','sin_vegetales','fritos','ultraprocesados','azucar_alta','grasas_saturadas','ayuno_prolongado'] },
+  contexto:   { label:'Contexto',          tags:['compartido','comida_fuera','comida_rapida','bowl_nocturno','en_ayunas','comida_elaborada'] },
+  suplementos:{ label:'Suplementos',       tags:['doublex_media','doublex_completa','omega3_capsula','menjurje'] }
+};
+const RV_GRUPOS = { cubierto:['macro','vitamina','mineral','funcional'], atencion:['atencion'], contexto:['contexto'], suplementos:['suplementos'] };
+const RV_CHIP_CLASS = { cubierto:'tag ok', atencion:'tag warn', contexto:'tag ctx', suplementos:'tag purple' };
+
+var rvState = {};
+var rvModalGrupo = '', rvModalSel = [];
+
+function abrirRevisar() {
+  var csv = document.getElementById('csv-input').value.trim();
+  if (!csv) { showFormStatus('err','⚠️ Pega el CSV antes de revisar.'); return; }
+  var parsed = rvParsearCSV(csv);
+  if (!parsed) return;
+  rvState = parsed;
+  rvRenderPanel();
+  var overlay = document.getElementById('revisar-overlay');
+  overlay.style.pointerEvents = 'all';
+  overlay.style.opacity = '1';
+  document.getElementById('revisar-panel').style.transform = 'translateY(0)';
+}
+
+function cerrarRevisar() {
+  var overlay = document.getElementById('revisar-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.pointerEvents = 'none';
+  document.getElementById('revisar-panel').style.transform = 'translateY(100%)';
+}
+
+function cerrarRevisarSiOverlay(e) {
+  if (e.target === document.getElementById('revisar-overlay')) cerrarRevisar();
+}
+
+function rvParsearCSV(raw) {
+  var cols = rvParseCSVLine(raw);
+  if (cols.length < 13) {
+    showFormStatus('err', '⚠️ Se detectaron ' + cols.length + ' columnas, se esperan 14.');
+    return null;
+  }
+  var split = function(s) { return s ? s.split('|').map(function(x){return x.trim();}).filter(Boolean) : []; };
+  return {
+    fecha: cols[0].trim(), diaId: cols[1].trim(), etiqueta: cols[2].trim(),
+    resumenDia: cols[3].trim(), comidaId: cols[4].trim() || 'desayuno',
+    titulo: cols[5].trim(), hora: cols[6].trim(), icono: cols[7].trim() || '🍽️',
+    alimentos: split(cols[8]),
+    tags: { cubierto: split(cols[9]), atencion: split(cols[10]), contexto: split(cols[11]), suplementos: split(cols[12]) },
+    nota: (cols[13]||'').trim()
+  };
+}
+
+function rvParseCSVLine(text) {
+  var cols=[], cell='', inQ=false;
+  for (var i=0; i<text.length; i++) {
+    var c=text[i];
+    if(inQ){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"'){inQ=false;}else{cell+=c;}}
+    else{if(c==='"'){inQ=true;}else if(c===','){cols.push(cell);cell='';}else{cell+=c;}}
+  }
+  cols.push(cell); return cols;
+}
+
+function rvHoraA24h(hora) {
+  if(!hora) return '';
+  hora=hora.trim().toLowerCase().replace(/\s/g,'');
+  if(/^\d{1,2}:\d{2}$/.test(hora)){var p=hora.split(':');return p[0].padStart(2,'0')+':'+p[1];}
+  var m=hora.match(/^(\d{1,2}):(\d{2})(am|pm)$/);
+  if(m){var h=parseInt(m[1]);if(m[3]==='am'){if(h===12)h=0;}else{if(h!==12)h+=12;}return String(h).padStart(2,'0')+':'+m[2];}
+  return hora;
+}
+
+function rvRenderPanel() {
+  var s = rvState;
+  var html =
+    '<div style="display:flex;gap:.4rem;align-items:center;margin-bottom:1.25rem;">' +
+      '<div id="rvps1" style="display:flex;align-items:center;gap:.35rem;font-size:11px;color:var(--accent);font-family:\'DM Mono\',monospace;">' +
+        '<div style="width:18px;height:18px;border-radius:50%;background:var(--accent-dim, #3ecf7222);border:1px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;">1</div><span>Campos</span></div>' +
+      '<div style="flex:1;height:1px;background:var(--border);"></div>' +
+      '<div id="rvps2" style="display:flex;align-items:center;gap:.35rem;font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;">' +
+        '<div style="width:18px;height:18px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;">2</div><span>Confirmar</span></div>' +
+    '</div>' +
+    '<div id="rv-paso1">' +
+    rvFieldCard('Meta del día',
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem;">' +
+        rvField('Fecha','<input type="date" id="rvf-fecha" value="'+s.fecha+'" style="'+rvInputStyle()+'">') +
+        rvField('Tipo', '<select id="rvf-comidaid" style="'+rvInputStyle()+'">'+
+          ['desayuno','almuerzo','comida','cena','snack','suplemento','menjurje','otro'].map(function(o){
+            return '<option value="'+o+'"'+(o===s.comidaId?' selected':'')+'>'+o+'</option>';
+          }).join('')+'</select>') +
+      '</div>' +
+      rvField('Resumen del día','<textarea id="rvf-resumen" rows="2" style="'+rvInputStyle()+'min-height:55px;resize:vertical;">'+s.resumenDia+'</textarea>')
+    ) +
+    rvFieldCard('Detalle',
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem;">' +
+        rvField('Título','<input type="text" id="rvf-titulo" value="'+rvEsc(s.titulo)+'" style="'+rvInputStyle()+'">') +
+        rvField('Hora','<input type="time" id="rvf-hora" value="'+rvHoraA24h(s.hora)+'" style="'+rvInputStyle()+'">') +
+      '</div>' +
+      rvField('Icono','<div style="display:flex;gap:.45rem;align-items:center;"><div id="rvf-emoji-preview" style="width:36px;height:36px;background:var(--bg,#0e0f11);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">'+s.icono+'</div><input type="text" id="rvf-icono" value="'+s.icono+'" maxlength="2" oninput="document.getElementById(\'rvf-emoji-preview\').textContent=this.value||\'🍽️\'" style="'+rvInputStyle()+'"></div>')
+    ) +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">' +
+      '<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;">Alimentos</div>' +
+      '<div id="rv-alimentos-chips" style="display:flex;flex-wrap:wrap;gap:.35rem;min-height:28px;padding:.45rem .55rem;background:var(--bg,#0e0f11);border:1px solid var(--border);border-radius:8px;"></div>' +
+      '<div style="display:flex;gap:.45rem;margin-top:.45rem;">' +
+        '<input type="text" id="rv-food-input" placeholder="Agregar alimento..." onkeydown="if(event.key===\'Enter\'){rvAgregarAlimento();}" style="flex:1;background:var(--bg,#0e0f11);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12.5px;padding:.45rem .65rem;outline:none;font-family:\'DM Sans\',sans-serif;">' +
+        '<button onclick="rvAgregarAlimento()" style="padding:.45rem .7rem;background:#3ecf7222;color:#3ecf72;border:1px solid #3ecf72;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">+</button>' +
+      '</div>' +
+    '</div>' +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">' +
+      '<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;">Tags</div>' +
+      rvTagsGroup('cubierto','✅ Cubierto') +
+      rvTagsGroup('atencion','⚠️ Atención') +
+      rvTagsGroup('contexto','💬 Contexto') +
+      rvTagsGroup('suplementos','💊 Suplementos') +
+    '</div>' +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">' +
+      rvField('Nota','<textarea id="rvf-nota" rows="2" style="'+rvInputStyle()+'min-height:55px;resize:vertical;">'+rvEsc(s.nota)+'</textarea>') +
+    '</div>' +
+    '<button onclick="rvGenerarCSV()" style="width:100%;padding:.75rem;border-radius:12px;background:var(--accent);color:#000;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✅ Generar CSV revisado</button>' +
+    '</div>' +
+    '<div id="rv-paso2" style="display:none;">' +
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">' +
+        '<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;">CSV generado</div>' +
+        '<div id="rv-csv-final" style="background:var(--bg,#0e0f11);border:1px solid var(--border);border-radius:8px;padding:.7rem;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2);word-break:break-all;line-height:1.7;"></div>' +
+      '</div>' +
+      '<div id="rv-send-status" style="display:none;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;"></div>' +
+      '<div id="rv-send-actions">' +
+        '<div style="display:flex;gap:.6rem;">' +
+          '<button onclick="rvVolverPaso1()" style="padding:.6rem 1rem;border-radius:10px;background:var(--card2,#252830);color:var(--text2);border:1px solid var(--border);font-size:13.5px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">← Editar</button>' +
+          '<button onclick="rvEnviar()" style="flex:2;padding:.6rem 1rem;border-radius:10px;background:var(--accent);color:#000;border:none;font-size:13.5px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">↑ Enviar al Sheet</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="rv-send-success" style="display:none;text-align:center;padding:2rem 1rem;">' +
+        '<div style="font-size:3rem;margin-bottom:.75rem;">✅</div>' +
+        '<div style="font-family:\'Fraunces\',serif;font-size:1.2rem;font-weight:300;margin-bottom:.4rem;">Enviado al Sheet</div>' +
+        '<div style="font-size:13px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:1.25rem;">Verifica en ~30 segundos</div>' +
+        '<button onclick="cerrarRevisar()" style="width:100%;padding:.65rem;border-radius:10px;background:var(--card2,#252830);color:var(--text2);border:1px solid var(--border);font-size:14px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Cerrar</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('panel-body-inner').innerHTML = html;
+  rvRenderAlimentos();
+  rvRenderTags('cubierto'); rvRenderTags('atencion'); rvRenderTags('contexto'); rvRenderTags('suplementos');
+}
+
+function rvInputStyle() { return 'width:100%;background:var(--bg,#0e0f11);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:\'DM Sans\',sans-serif;font-size:13.5px;padding:.55rem .75rem;outline:none;'; }
+function rvEsc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function rvField(label, input) { return '<div style="margin-bottom:.75rem;"><div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;">'+label+'</div>'+input+'</div>'; }
+function rvFieldCard(label, content) { return '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;"><div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.65rem;">'+label+'</div>'+content+'</div>'; }
+function rvTagsGroup(grupo, label) {
+  return '<div style="margin-bottom:.65rem;"><div style="font-size:9.5px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">'+label+'</div><div id="rv-tags-'+grupo+'" style="display:flex;flex-wrap:wrap;gap:.35rem;min-height:28px;padding:.45rem .55rem;background:var(--bg,#0e0f11);border:1px solid var(--border);border-radius:8px;"></div></div>';
+}
+
+function rvRenderAlimentos() {
+  var c = document.getElementById('rv-alimentos-chips'); if(!c) return; c.innerHTML='';
+  rvState.alimentos.forEach(function(a,i){
+    var ch=document.createElement('span');
+    ch.style.cssText='display:inline-flex;align-items:center;gap:.25rem;padding:2px 7px 2px 8px;border-radius:20px;font-size:11.5px;background:var(--card2,#252830);color:var(--text2);border:1px solid var(--border);';
+    ch.innerHTML=a+'<span onclick="rvEliminarAlimento('+i+')" style="width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:8px;cursor:pointer;">✕</span>';
+    c.appendChild(ch);
+  });
+}
+function rvAgregarAlimento() {
+  var inp=document.getElementById('rv-food-input'),val=inp.value.trim();
+  if(!val) return; rvState.alimentos.push(val); inp.value=''; rvRenderAlimentos();
+}
+function rvEliminarAlimento(i) { rvState.alimentos.splice(i,1); rvRenderAlimentos(); }
+
+var rvChipColors = {
+  cubierto:'background:#3ecf7222;color:#3ecf72;border:1px solid #3ecf7244;',
+  atencion:'background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;',
+  contexto:'background:#6b728022;color:#9aa0ad;border:1px solid #6b728044;',
+  suplementos:'background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa44;'
+};
+function rvRenderTags(grupo) {
+  var c=document.getElementById('rv-tags-'+grupo); if(!c) return; c.innerHTML='';
+  rvState.tags[grupo].forEach(function(t,i){
+    var ch=document.createElement('span');
+    ch.style.cssText='display:inline-flex;align-items:center;gap:.25rem;padding:2px 7px 2px 8px;border-radius:20px;font-size:11.5px;font-weight:500;'+rvChipColors[grupo];
+    ch.innerHTML=t+'<span onclick="rvEliminarTag(\''+grupo+'\','+i+')" style="width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:8px;cursor:pointer;">✕</span>';
+    c.appendChild(ch);
+  });
+  var add=document.createElement('button');
+  add.style.cssText='display:inline-flex;align-items:center;gap:.2rem;padding:2px 7px;border-radius:20px;font-size:11.5px;color:var(--muted);border:1px dashed var(--border);cursor:pointer;background:transparent;font-family:\'DM Sans\',sans-serif;';
+  add.textContent='+ agregar'; add.onclick=function(){rvAbrirModal(grupo);}; c.appendChild(add);
+}
+function rvEliminarTag(g,i) { rvState.tags[g].splice(i,1); rvRenderTags(g); }
+
+function rvAbrirModal(grupo) {
+  rvModalGrupo=grupo; rvModalSel=[...rvState.tags[grupo]];
+  var titles={cubierto:'Tags cubierto',atencion:'Tags atención',contexto:'Tags contexto',suplementos:'Suplementos'};
+  document.getElementById('rv-modal-title').textContent=titles[grupo];
+  var body=document.getElementById('rv-modal-body'); body.innerHTML='';
+  RV_GRUPOS[grupo].forEach(function(g){
+    var cat=RV_TAG_CATALOG[g];
+    var div=document.createElement('div'); div.style.marginBottom='.85rem';
+    div.innerHTML='<div style="font-size:9.5px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem;padding-bottom:.25rem;border-bottom:1px solid var(--border);">'+cat.label+'</div><div id="rvmc-'+g+'" style="display:flex;flex-wrap:wrap;gap:.35rem;"></div>';
+    body.appendChild(div);
+    var wrap=div.querySelector('#rvmc-'+g);
+    cat.tags.forEach(function(t){
+      var btn=document.createElement('button');
+      btn.style.cssText='padding:3px 9px;border-radius:20px;font-size:11.5px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;';
+      if(rvModalSel.includes(t)){btn.style.background='#3ecf7222';btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';}
+      btn.textContent=t; btn.dataset.tag=t;
+      btn.onclick=function(){rvToggleModalTag(btn,t);}; wrap.appendChild(btn);
+    });
+  });
+  var mo=document.getElementById('rv-modal-overlay');
+  mo.style.opacity='1'; mo.style.pointerEvents='all';
+  document.getElementById('rv-modal').style.transform='translateY(0)';
+}
+function rvToggleModalTag(btn,tag) {
+  var idx=rvModalSel.indexOf(tag);
+  if(idx>=0){rvModalSel.splice(idx,1);btn.style.background='var(--card)';btn.style.borderColor='var(--border)';btn.style.color='var(--text2)';}
+  else{rvModalSel.push(tag);btn.style.background='#3ecf7222';btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';}
+}
+function aplicarRvModal() { rvState.tags[rvModalGrupo]=[...rvModalSel]; rvRenderTags(rvModalGrupo); cerrarRvModal(); }
+function cerrarRvModal() { var mo=document.getElementById('rv-modal-overlay'); mo.style.opacity='0'; mo.style.pointerEvents='none'; document.getElementById('rv-modal').style.transform='translateY(20px)'; }
+function cerrarRvModalSiOverlay(e) { if(e.target===document.getElementById('rv-modal-overlay')) cerrarRvModal(); }
+
+function rvGenerarCSV() {
+  var fecha=document.getElementById('rvf-fecha').value;
+  var comidaId=document.getElementById('rvf-comidaid').value;
+  var resumen=document.getElementById('rvf-resumen').value;
+  var titulo=document.getElementById('rvf-titulo').value;
+  var hora=document.getElementById('rvf-hora').value;
+  var icono=document.getElementById('rvf-icono').value||'🍽️';
+  var nota=document.getElementById('rvf-nota').value;
+  if(!fecha||!titulo){alert('Fecha y título son requeridos.');return;}
+  var d=new Date(fecha+'T12:00:00');
+  var dias=['dom','lun','mar','mie','jue','vie','sab'];
+  var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var nombresL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var diaId=dias[d.getDay()]+String(d.getDate()).padStart(2,'0');
+  var etiqueta=nombresL[d.getDay()]+' '+d.getDate()+' de '+meses[d.getMonth()];
+  var csv=[fecha,diaId,etiqueta,resumen,comidaId,titulo,hora,icono,
+    rvState.alimentos.join('|'),rvState.tags.cubierto.join('|'),rvState.tags.atencion.join('|'),
+    rvState.tags.contexto.join('|'),rvState.tags.suplementos.join('|'),nota].join(',');
+  document.getElementById('rv-csv-final').textContent=csv;
+  document.getElementById('rv-paso1').style.display='none';
+  document.getElementById('rv-paso2').style.display='block';
+  document.getElementById('rvps1').style.color='var(--text2)';
+  document.getElementById('rvps2').style.color='var(--accent)';
+}
+
+function rvVolverPaso1() {
+  document.getElementById('rv-paso1').style.display='block';
+  document.getElementById('rv-paso2').style.display='none';
+  document.getElementById('rvps1').style.color='var(--accent)';
+  document.getElementById('rvps2').style.color='var(--muted)';
+}
+
+function rvEnviar() {
+  var csv=document.getElementById('rv-csv-final').textContent;
+  document.getElementById('gform-entry').value=csv;
+  document.getElementById('rv-send-status').style.display='block';
+  document.getElementById('rv-send-status').style.cssText='display:block;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa33;';
+  document.getElementById('rv-send-status').textContent='Enviando al Sheet…';
+  document.getElementById('rv-send-actions').style.display='none';
+  document.getElementById('gform-real').submit();
+  setTimeout(function(){
+    document.getElementById('rv-send-status').style.display='none';
+    document.getElementById('rv-send-success').style.display='block';
+    document.getElementById('csv-input').value=csv;
+  }, 8000);
+}
 </script>
+<!-- OVERLAY REVISAR -->
+<div class="revisar-overlay" id="revisar-overlay" onclick="cerrarRevisarSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
+  <div id="revisar-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:51;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem .75rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2;">
+      <div style="font-family:'Fraunces',serif;font-weight:300;font-size:1.1rem;">🔍 Revisar entrada</div>
+      <div onclick="cerrarRevisar()" style="width:30px;height:30px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✕</div>
+    </div>
+    <div style="padding:1.1rem 1.25rem;" id="panel-body-inner"></div>
+  </div>
+</div>
+
+<!-- MODAL TAGS -->
+<div class="modal-overlay" id="rv-modal-overlay" onclick="cerrarRvModalSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;">
+  <div id="rv-modal" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:75vh;overflow-y:auto;padding:1.1rem;transform:translateY(20px);transition:transform .25s;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;">
+      <div style="font-family:'Fraunces',serif;font-size:.95rem;font-weight:300;" id="rv-modal-title">Tags</div>
+      <div onclick="cerrarRvModal()" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;">✕</div>
+    </div>
+    <div id="rv-modal-body"></div>
+    <div style="position:sticky;bottom:0;background:var(--surface);padding-top:.85rem;margin-top:.85rem;border-top:1px solid var(--border);">
+      <button onclick="aplicarRvModal()" style="width:100%;padding:.75rem;border-radius:12px;background:var(--accent);color:#000;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Listo</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
