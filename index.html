@@ -152,10 +152,11 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
   <button class="sec-pill" data-view="contexto">Contexto</button>
   <button class="sec-pill" data-view="alertas">Alertas</button>
   <button class="sec-pill" data-view="consejos">Consejos</button>
+  <button class="sec-pill" data-view="analisis">🔍 Análisis</button>
   <div class="nav-divider"></div>
   <button class="sec-pill" data-view="registro">✏️ Registrar</button>
 </nav>
-
+  
 <div class="cal-wrap" id="cal-wrap">
   <div class="cal-header"><button class="cal-arrow" id="cal-prev" onclick="calNavMes(-1)">&#x2039;</button><span class="cal-mes" id="cal-mes-label"></span><button class="cal-arrow" id="cal-next" onclick="calNavMes(1)">&#x203A;</button></div>
   <div class="cal-grid" id="cal-grid"></div>
@@ -321,8 +322,9 @@ const DATA = {
 // ─────────────────────────────────────────────
 //  GOOGLE SHEETS — carga dinámica
 // ─────────────────────────────────────────────
-var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?output=csv';
-
+var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=1969338442&single=true&output=csv';
+const ALERTAS_CSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=1680934207&single=true&output=csv';
+const CONSEJOS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=160987466&single=true&output=csv';
 // ─────────────────────────────────────────────
 //  GOOGLE FORM — embed nativo
 //  action: URL real de tu form (formResponse)
@@ -404,7 +406,7 @@ function renderRegistro() {
         '<textarea id="csv-input" class="csv-textarea" rows="4" ' +
           'placeholder="2026-04-29,lun29,Lunes 29 Abr,Desayuno sólido · huevo + frijoles,desayuno,Desayuno,08:00,🍳,Huevo revuelto|Frijoles de olla,proteina|hierro_vegetal,sodio_moderado,comida_elaborada,,"></textarea>' +
         '<div class="csv-hint">Formato: <code>fecha,diaId,etiqueta,resumen,comidaId,titulo,hora,icono,alimentos(|),cubierto(|),atencion(|),contexto(|),suplementos(|),nota</code></div>' +
-         '<div class="form-actions">' +
+        '<div class="form-actions">' +
           '<button class="btn-submit" id="btn-submit" onclick="submitGForm()">↑ Enviar</button>' +
           '<button class="btn-revisar" onclick="abrirRevisar()">🔍 Revisar</button>' +
           '<button class="btn-clear" onclick="document.getElementById(\'csv-input\').value=\'\';document.getElementById(\'form-status\').className=\'form-status\';">Limpiar</button>' +
@@ -479,7 +481,60 @@ function csvRowsToDias(rows) {
   }
   return diasOrder.map(function(id){ return diasMap[id]; });
 }
+function prepararAnalisis() {
+  var nivel = document.getElementById('analisis-nivel').value;
+  var periodo = document.getElementById('analisis-periodo').value;
+  var hoy = new Date();
+  var desde = new Date();
 
+  if (periodo === 'hoy') { desde = new Date(hoy); }
+  else if (periodo === 'semana') { desde.setDate(hoy.getDate() - 7); }
+  else if (periodo === 'mes') { desde.setDate(hoy.getDate() - 30); }
+  else if (periodo === 'tres_meses') { desde.setDate(hoy.getDate() - 90); }
+
+  var diasFiltrados = DATA.dias.filter(function(dia) {
+    var f = new Date(dia.fecha);
+    return f >= desde && f <= hoy;
+  });
+
+  if (diasFiltrados.length === 0) {
+    document.getElementById('analisis-output').value = 'No hay registros en este periodo.';
+    return;
+  }
+
+  var lineas = [];
+  lineas.push('=== ANÁLISIS NUTRICIONAL ===');
+  lineas.push('Periodo: ' + periodo + ' | Nivel: ' + nivel);
+  lineas.push('Días analizados: ' + diasFiltrados.length);
+  lineas.push('');
+
+  diasFiltrados.forEach(function(dia) {
+    lineas.push('── ' + dia.etiqueta + ' (' + dia.fecha + ')');
+    dia.comidas.forEach(function(c) {
+      var linea = '  [' + c.hora + '] ' + c.titulo;
+      if (nivel === 'minimo') {
+        linea += ' | cubierto: ' + c.tags.cubierto.join(', ');
+        linea += ' | atencion: ' + c.tags.atencion.join(', ');
+      } else if (nivel === 'recomendado') {
+        linea += ' | alimentos: ' + c.alimentos.join(', ');
+        linea += ' | cubierto: ' + c.tags.cubierto.join(', ');
+        linea += ' | atencion: ' + c.tags.atencion.join(', ');
+        linea += ' | contexto: ' + c.tags.contexto.join(', ');
+      } else if (nivel === 'completo') {
+        linea += ' | alimentos: ' + c.alimentos.join(', ');
+        linea += ' | cubierto: ' + c.tags.cubierto.join(', ');
+        linea += ' | atencion: ' + c.tags.atencion.join(', ');
+        linea += ' | contexto: ' + c.tags.contexto.join(', ');
+        linea += ' | suplementos: ' + c.tags.suplementos.join(', ');
+        if (c.nota) linea += ' | nota: ' + c.nota;
+      }
+      lineas.push(linea);
+    });
+    lineas.push('');
+  });
+
+  document.getElementById('analisis-output').value = lineas.join('\n');
+}
 async function cargarRegistros() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
@@ -497,7 +552,45 @@ async function cargarRegistros() {
     return false;
   }
 }
+async function cargarAlertas() {
+  try {
+    var res = await fetch(ALERTAS_CSV);
+    if (!res.ok) return;
+    var text = await res.text();
+    var rows = parseCSVText(text).slice(2);
+    DATA.alertas = rows
+      .filter(function(r) { return r[0]; })
+      .map(function(r) {
+        return {
+          tipo:    (r[0] || '').trim(),
+          icono:   (r[1] || '').trim(),
+          titulo:  (r[2] || '').trim(),
+          detalle: (r[3] || '').trim()
+        };
+      });
+  } catch(e) {
+    console.error('[Alertas] Error:', e);
+  }
+}
 
+async function cargarConsejos() {
+  try {
+    var res = await fetch(CONSEJOS_CSV);
+    if (!res.ok) return;
+    var text = await res.text();
+    var rows = parseCSVText(text).slice(2);
+    DATA.consejos = rows
+      .filter(function(r) { return r[0]; })
+      .map(function(r) {
+        return {
+          emoji: (r[0] || '').trim(),
+          texto: (r[1] || '').trim()
+        };
+      });
+  } catch(e) {
+    console.error('[Consejos] Error:', e);
+  }
+}
 function contarTagAtencion(tagKey) {
   var count = 0;
   DATA.dias.forEach(function(dia) { dia.comidas.forEach(function(comida) { if (comida.tags.atencion.indexOf(tagKey) !== -1) count++; }); });
@@ -519,6 +612,26 @@ function calcAutoStats() {
   };
 }
 function labelTag(key) { return TAG_CATALOG[key] ? TAG_CATALOG[key].label : key; }
+function renderAnalisis() {
+  return '<div id="analisis"><div class="section-header"><h2>Preparar análisis</h2><div class="section-line"></div></div>' +
+    '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;">' +
+      '<select id="analisis-periodo" style="flex:1;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;">' +
+        '<option value="hoy">Hoy</option>' +
+        '<option value="semana" selected>Última semana</option>' +
+        '<option value="mes">Último mes</option>' +
+        '<option value="tres_meses">Últimos 3 meses</option>' +
+      '</select>' +
+      '<select id="analisis-nivel" style="flex:1;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;">' +
+        '<option value="minimo">Mínimo (solo tags)</option>' +
+        '<option value="recomendado" selected>Recomendado (+ alimentos)</option>' +
+        '<option value="completo">Completo (+ notas)</option>' +
+      '</select>' +
+    '</div>' +
+    '<button onclick="prepararAnalisis()" style="width:100%;padding:.75rem;border-radius:12px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:1rem;">🔍 Generar texto para análisis</button>' +
+    '<textarea id="analisis-output" readonly rows="14" style="width:100%;padding:.8rem;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:12px;font-family:monospace;resize:vertical;box-sizing:border-box;" placeholder="El texto para pegar en Claude aparecerá aquí..."></textarea>' +
+    '<button onclick="navigator.clipboard.writeText(document.getElementById(\'analisis-output\').value)" style="width:100%;margin-top:.5rem;padding:.6rem;border-radius:10px;background:var(--card);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer;">📋 Copiar al portapapeles</button>' +
+  '</div>';
+}
 function renderTags(arr, cls) {
   if (!arr || arr.length === 0) return "";
   return arr.map(function(t) { return '<span class="tag ' + cls + '">' + labelTag(t) + '</span>'; }).join("");
@@ -661,6 +774,8 @@ function updateView() {
     app.innerHTML = renderConsejos();
   } else if (appState.view === "registro") {
     app.innerHTML = renderRegistro();
+  } else if (appState.view === "analisis") {
+    app.innerHTML = renderAnalisis();
   }
 }
 
@@ -695,11 +810,18 @@ window.onload = async function() {
   render();
   var pills = document.querySelectorAll(".sec-pill");
   pills.forEach(function(p){ p.onclick = function(){ setView(p.dataset.view); }; });
-  var ok = await cargarRegistros();
+
+  const [ok] = await Promise.all([
+    cargarRegistros(),
+    cargarAlertas(),
+    cargarConsejos()
+  ]);
+
   if (!ok || DATA.dias.length === 0) return;
   var ultimo = DATA.dias[DATA.dias.length - 1];
   appState.diaId = ultimo.id; appState.view = "dia"; updateView();
 };
+  
 // ─── MÓDULO REVISAR ────────────────────────────────────────────────
 const RV_TAG_CATALOG = {
   macro:      { label:'Macronutrientes',   tags:['proteina','fibra','grasas_saludables','grasas_mono','omega3','carbohidratos_integrales','grasas_saturadas','azucar_alta'] },
@@ -711,8 +833,6 @@ const RV_TAG_CATALOG = {
   suplementos:{ label:'Suplementos',       tags:['doublex_media','doublex_completa','omega3_capsula','menjurje'] }
 };
 const RV_GRUPOS = { cubierto:['macro','vitamina','mineral','funcional'], atencion:['atencion'], contexto:['contexto'], suplementos:['suplementos'] };
-const RV_CHIP_CLASS = { cubierto:'tag ok', atencion:'tag warn', contexto:'tag ctx', suplementos:'tag purple' };
-
 var rvState = {};
 var rvModalGrupo = '', rvModalSel = [];
 
@@ -781,7 +901,7 @@ function rvRenderPanel() {
   var html =
     '<div style="display:flex;gap:.4rem;align-items:center;margin-bottom:1.25rem;">' +
       '<div id="rvps1" style="display:flex;align-items:center;gap:.35rem;font-size:11px;color:var(--accent);font-family:\'DM Mono\',monospace;">' +
-        '<div style="width:18px;height:18px;border-radius:50%;background:var(--accent-dim, #3ecf7222);border:1px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;">1</div><span>Campos</span></div>' +
+        '<div style="width:18px;height:18px;border-radius:50%;background:#3ecf7222;border:1px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;">1</div><span>Campos</span></div>' +
       '<div style="flex:1;height:1px;background:var(--border);"></div>' +
       '<div id="rvps2" style="display:flex;align-items:center;gap:.35rem;font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;">' +
         '<div style="width:18px;height:18px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;">2</div><span>Confirmar</span></div>' +
@@ -858,7 +978,7 @@ function rvTagsGroup(grupo, label) {
 }
 
 function rvRenderAlimentos() {
-  var c = document.getElementById('rv-alimentos-chips'); if(!c) return; c.innerHTML='';
+  var c=document.getElementById('rv-alimentos-chips'); if(!c) return; c.innerHTML='';
   rvState.alimentos.forEach(function(a,i){
     var ch=document.createElement('span');
     ch.style.cssText='display:inline-flex;align-items:center;gap:.25rem;padding:2px 7px 2px 8px;border-radius:20px;font-size:11.5px;background:var(--card2,#252830);color:var(--text2);border:1px solid var(--border);';
@@ -969,11 +1089,12 @@ function rvEnviar() {
     document.getElementById('rv-send-success').style.display='block';
     document.getElementById('csv-input').value=csv;
   }, 8000);
-};
+}
+  
 </script>
-<!-- OVERLAY REVISAR -->
-<div class="revisar-overlay" id="revisar-overlay" onclick="cerrarRevisarSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
-  <div id="revisar-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:51;">
+
+  <div id="revisar-overlay" onclick="cerrarRevisarSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
+  <div id="revisar-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem .75rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2;">
       <div style="font-family:'Fraunces',serif;font-weight:300;font-size:1.1rem;">🔍 Revisar entrada</div>
       <div onclick="cerrarRevisar()" style="width:30px;height:30px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✕</div>
@@ -982,8 +1103,7 @@ function rvEnviar() {
   </div>
 </div>
 
-<!-- MODAL TAGS -->
-<div class="modal-overlay" id="rv-modal-overlay" onclick="cerrarRvModalSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;">
+<div id="rv-modal-overlay" onclick="cerrarRvModalSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;">
   <div id="rv-modal" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:75vh;overflow-y:auto;padding:1.1rem;transform:translateY(20px);transition:transform .25s;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;">
       <div style="font-family:'Fraunces',serif;font-size:.95rem;font-weight:300;" id="rv-modal-title">Tags</div>
