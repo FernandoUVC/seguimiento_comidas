@@ -649,7 +649,7 @@ function renderComida(c) {
     var supMap = { doublex_media:{label:"2X",color:"#fbbf24"}, doublex_completa:{label:"2X·2",color:"#fb923c"}, omega3_capsula:{label:"Ω3",color:"#60a5fa"}, menjurje:{label:"🧉 MNJ",color:"#4ade80"} };
     supIndicators = c.tags.suplementos.map(function(s){ var m=supMap[s]||{label:s,color:"#6b7280"}; return '<span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.04em;background:'+m.color+'22;border:1px solid '+m.color+'55;color:'+m.color+';margin-left:6px;flex-shrink:0;">'+m.label+'</span>'; }).join("");
   }
-  return '<div class="meal-card"><div class="meal-header" onclick="toggle(this)"><div class="meal-header-left"><div class="meal-icon">'+c.icono+'</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><div class="meal-title">'+c.titulo+'</div>'+supIndicators+'</div><div class="meal-time">'+c.hora+'</div></div><div class="meal-chevron">&#x25BC;</div></div><div class="meal-body">'+(alimentos?'<div class="food-list">'+alimentos+'</div>':'')+nota+secciones+'</div></div>';
+  return '<div class="meal-card"><div class="meal-header" onclick="toggle(this)"><div class="meal-header-left"><div class="meal-icon">'+c.icono+'</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><div class="meal-title">'+c.titulo+'</div>'+supIndicators+'</div>'<div class="meal-time">'+formatHora(c.hora)+'</div></div><div class="meal-chevron">&#x25BC;</div></div><div class="meal-body">'+(alimentos?'<div class="food-list">'+alimentos+'</div>':'')+nota+secciones+'</div></div>';
 }
 function renderDia(dia) {
   var comidas = dia.comidas.map(renderComida).join("");
@@ -1090,7 +1090,13 @@ function rvEnviar() {
     document.getElementById('csv-input').value=csv;
   }, 8000);
 }
-  
+function formatHora(h) {
+  if (!h) return '';
+  h = h.trim().toLowerCase();
+  var m = h.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?m\.?|p\.?m\.?)?$/);
+  if (!m) return h;
+  return m[1] + ':' + m[2] + (m[3] ? ' ' + m[3].replace(/\./g,'') : '');
+}
 </script>
 
   <div id="revisar-overlay" onclick="cerrarRevisarSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
