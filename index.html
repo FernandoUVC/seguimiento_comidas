@@ -481,6 +481,22 @@ function csvRowsToDias(rows) {
   }
   return diasOrder.map(function(id){ return diasMap[id]; });
 }
+function exportarAnalisisCSV() {
+  var texto = document.getElementById('analisis-output').value;
+  if (!texto.trim()) { alert('Genera el análisis primero.'); return; }
+  var periodo = document.getElementById('analisis-periodo').value;
+  var nivel = document.getElementById('analisis-nivel').value;
+  var blob = new Blob(['\uFEFF' + texto], { type: 'text/plain;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'analisis_' + periodo + '_' + nivel + '_' + new Date().toISOString().split('T')[0] + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+  
 function prepararAnalisis() {
   var nivel = document.getElementById('analisis-nivel').value;
   var periodo = document.getElementById('analisis-periodo').value;
@@ -629,7 +645,10 @@ function renderAnalisis() {
     '</div>' +
     '<button onclick="prepararAnalisis()" style="width:100%;padding:.75rem;border-radius:12px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:1rem;">🔍 Generar texto para análisis</button>' +
     '<textarea id="analisis-output" readonly rows="14" style="width:100%;padding:.8rem;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:12px;font-family:monospace;resize:vertical;box-sizing:border-box;" placeholder="El texto para pegar en Claude aparecerá aquí..."></textarea>' +
-    '<button onclick="navigator.clipboard.writeText(document.getElementById(\'analisis-output\').value)" style="width:100%;margin-top:.5rem;padding:.6rem;border-radius:10px;background:var(--card);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer;">📋 Copiar al portapapeles</button>' +
+    '<div style="display:flex;gap:.5rem;margin-top:.5rem;">' +
+      '<button onclick="navigator.clipboard.writeText(document.getElementById(\'analisis-output\').value)" style="flex:1;padding:.6rem;border-radius:10px;background:var(--card);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer;">📋 Copiar</button>' +
+      '<button onclick="exportarAnalisisCSV()" style="flex:1;padding:.6rem;border-radius:10px;background:var(--accent);color:#000;border:none;font-size:14px;font-weight:600;cursor:pointer;">⬇️ Descargar .txt</button>' +
+    '</div>' +
   '</div>';
 }
 function renderTags(arr, cls) {
