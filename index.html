@@ -724,7 +724,7 @@ var CAL_MESES = [
   { mes: "Abril 2026",  primerOffset: 2, totalDias: 30, anio: 2026, mesNum: 4 },
   { mes: "Mayo 2026",   primerOffset: 4, totalDias: 31, anio: 2026, mesNum: 5 }
 ];
-var calMesIdx = 0;
+var calMesIdx = CAL_MESES.length - 1;
 
 function calNavMes(dir) {
   var newIdx = calMesIdx + dir;
