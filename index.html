@@ -418,6 +418,21 @@ function renderRegistro() {
   return '<div id="registro-view">' +
     '<div class="section-header"><h2>Registrar comida</h2><div class="section-line"></div></div>' +
 
+'<div class="registro-wrap" style="margin-bottom:1rem">' +
+  '<div class="registro-form-header">' +
+    '<div class="form-icon">🤖</div>' +
+    '<div><div class="form-title">Asistente IA</div>' +
+    '<div class="form-sub">Describe tu comida en texto libre</div></div>' +
+  '</div>' +
+  '<div class="registro-form-body">' +
+    '<textarea id="ia-input" class="csv-textarea" rows="3" placeholder="Ej: desayuno 9am, 3 huevos revueltos con jamón de pavo y aguacate, en casa"></textarea>' +
+    '<div class="form-actions" style="margin-top:10px">' +
+      '<button class="btn-submit" onclick="enviarAIA()">✨ Parsear con IA</button>' +
+    '</div>' +
+    '<div id="ia-status" class="form-status"></div>' +
+  '</div>' +
+'</div>' +
+
     '<div class="registro-wrap">' +
       '<div class="registro-form-header">' +
         '<div class="form-icon">✏️</div>' +
@@ -1155,6 +1170,53 @@ async function probarProxy() {
   });
   var data = await r.json();
   alert(data.text);
+}
+  
+const PROXY_URL = 'https://script.google.com/macros/s/AKfycbxFwc2bHkTrjScbjhVcQdZMYw2rFcwbA8mZNTsyj7dFl3ZwubtsFZMrqMg3Wdu9Hk0y/exec';
+
+const SYSTEM_PROMPT = `Eres un asistente de registro nutricional. El usuario te describe una comida en texto libre y tú debes generar exactamente una línea CSV con este formato de 14 columnas:
+fecha,diaId,etiqueta,resumen_dia,comidaId,titulo,hora,icono,alimentos(separados por |),tags_cubierto(|),tags_atencion(|),tags_contexto(|),suplementos(|),nota
+
+Reglas:
+- fecha: formato YYYY-MM-DD (usa la fecha de hoy si no se especifica)
+- diaId: ej lun26, mar27, etc.
+- etiqueta: ej "Lunes 26 de mayo"
+- comidaId: desayuno, almuerzo, cena, snack, suplemento
+- icono: emoji representativo
+- alimentos: cada alimento separado por |
+- tags_cubierto solo de esta lista: proteina, fibra, grasas_saludables, omega3, vitamina_c, vitamina_d, vitamina_a, vitamina_b12, calcio, hierro_hemo, hierro_vegetal, magnesio, potasio, zinc, antioxidantes, antiinflamatorio
+- tags_atencion solo de: sodio_alto, sodio_moderado, sin_vegetales, fritos, ultraprocesados, azucar_alta, ayuno_prolongado
+- tags_contexto solo de: compartido, comida_fuera, comida_rapida, bowl_nocturno, en_ayunas, comida_elaborada
+- suplementos solo de: doublex_media, doublex_completa, omega3_capsula, menjurje
+- Responde ÚNICAMENTE con la línea CSV, sin explicaciones ni markdown.`;
+
+async function enviarAIA() {
+  var texto = document.getElementById('ia-input').value.trim();
+  if (!texto) return;
+
+  var statusEl = document.getElementById('ia-status');
+  statusEl.className = 'form-status sending';
+  statusEl.innerHTML = '<div class="spinner"></div><span>Procesando con IA…</span>';
+
+  var hoy = new Date().toISOString().split('T')[0];
+  var prompt = 'Fecha de hoy: ' + hoy + '\n\n' + texto;
+
+  try {
+    var r = await fetch(PROXY_URL + '?msg=' + encodeURIComponent(prompt) + '&system=' + encodeURIComponent(SYSTEM_PROMPT), {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    var data = await r.json();
+    var csv = data.text.trim();
+
+    // Pasa el resultado al textarea del formulario existente
+    document.getElementById('csv-input').value = csv;
+    statusEl.className = 'form-status ok';
+    statusEl.innerHTML = '✅ Listo — revisa el CSV y ajusta si necesitas antes de enviar.';
+  } catch(err) {
+    statusEl.className = 'form-status err';
+    statusEl.innerHTML = '⚠️ Error: ' + err.message;
+  }
 }
 </script>
 
