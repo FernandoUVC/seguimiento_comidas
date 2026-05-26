@@ -422,20 +422,7 @@ function renderRegistro() {
   return '<div id="registro-view">' +
     '<div class="section-header"><h2>Registrar comida</h2><div class="section-line"></div></div>' +
 
-'<div class="registro-wrap" style="margin-bottom:1rem">' +
-  '<div class="registro-form-header">' +
-    '<div class="form-icon">🤖</div>' +
-    '<div><div class="form-title">Asistente IA</div>' +
-    '<div class="form-sub">Describe tu comida en texto libre</div></div>' +
-  '</div>' +
-  '<div class="registro-form-body">' +
-    '<textarea id="ia-input" class="csv-textarea" rows="3" placeholder="Ej: desayuno 9am, 3 huevos revueltos con jamón de pavo y aguacate, en casa"></textarea>' +
-    '<div class="form-actions" style="margin-top:10px">' +
-      '<button class="btn-submit" onclick="abrirIAChat()">✨ Asistente IA</button>' +
-    '</div>' +
-    '<div id="ia-status" class="form-status"></div>' +
-  '</div>' +
-'</div>' +
+    '<button class="btn-submit" style="width:100%;margin-bottom:1rem;padding:14px;" onclick="abrirIAChat()">🤖 Abrir Asistente IA</button>' +
 
     '<div class="registro-wrap">' +
       '<div class="registro-form-header">' +
