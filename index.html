@@ -1144,11 +1144,9 @@ function formatHora(h) {
 function bottomNav(el, view) {
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  // Sincroniza con el sec-pill correspondiente
-  document.querySelectorAll('.sec-pill').forEach(p => {
-    p.classList.toggle('active', p.getAttribute('data-view') === view);
-  });
-  switchView(view);
+  appState.view = view;
+  appState.diaId = (view === 'dia') ? appState.diaId : null;
+  updateView();
 }
 </script>
 
