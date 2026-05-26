@@ -139,6 +139,11 @@ body{padding-bottom:70px;}
 .bottom-nav-item .nav-icon{font-size:1.4rem;line-height:1;transition:transform .2s;}
 .bottom-nav-item.active .nav-icon{transform:translateY(-2px);}
 .bottom-nav-item.active{color:var(--green);font-weight:700;}
+
+.ia-msg-bot{background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:var(--text);max-width:85%;align-self:flex-start;}
+.ia-msg-user{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:var(--text);max-width:85%;align-self:flex-end;}
+.ia-msg-typing{background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:var(--muted);align-self:flex-start;}
+
 </style>
 </head>
 <body>
@@ -427,7 +432,7 @@ function renderRegistro() {
   '<div class="registro-form-body">' +
     '<textarea id="ia-input" class="csv-textarea" rows="3" placeholder="Ej: desayuno 9am, 3 huevos revueltos con jamón de pavo y aguacate, en casa"></textarea>' +
     '<div class="form-actions" style="margin-top:10px">' +
-      '<button class="btn-submit" onclick="enviarAIA()">✨ Parsear con IA</button>' +
+      '<button class="btn-submit" onclick="abrirIAChat()">✨ Asistente IA</button>' +
     '</div>' +
     '<div id="ia-status" class="form-status"></div>' +
   '</div>' +
@@ -1218,8 +1223,137 @@ async function enviarAIA() {
     statusEl.innerHTML = '⚠️ Error: ' + err.message;
   }
 }
-</script>
 
+var iaChatHistory = [];
+var iaCSVDetectado = '';
+
+function abrirIAChat() {
+  iaChatHistory = [];
+  iaCSVDetectado = '';
+  document.getElementById('ia-chat-messages').innerHTML = '<div class="ia-msg-bot">Hola Fernando 👋 Descríbeme qué comiste y te genero el CSV listo para registrar.</div>';
+  document.getElementById('ia-csv-bar').style.display = 'none';
+  document.getElementById('ia-chat-input').value = '';
+  var overlay = document.getElementById('ia-chat-overlay');
+  overlay.style.opacity = '1';
+  overlay.style.pointerEvents = 'all';
+  document.getElementById('ia-chat-panel').style.transform = 'translateY(0)';
+  setTimeout(function(){ document.getElementById('ia-chat-input').focus(); }, 300);
+}
+
+function cerrarIAChat() {
+  var overlay = document.getElementById('ia-chat-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.pointerEvents = 'none';
+  document.getElementById('ia-chat-panel').style.transform = 'translateY(100%)';
+}
+
+function cerrarIAChatSiOverlay(e) {
+  if (e.target === document.getElementById('ia-chat-overlay')) cerrarIAChat();
+}
+
+function iaChatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarIAChat(); }
+}
+
+function agregarMensaje(texto, tipo) {
+  var msgs = document.getElementById('ia-chat-messages');
+  var div = document.createElement('div');
+  div.className = 'ia-msg-' + tipo;
+  div.textContent = texto;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function detectarCSV(texto) {
+  var lineas = texto.split('\n');
+  for (var i = 0; i < lineas.length; i++) {
+    var l = lineas[i].trim();
+    if (l.match(/^\d{4}-\d{2}-\d{2},/)) return l;
+  }
+  return null;
+}
+
+async function enviarIAChat() {
+  var input = document.getElementById('ia-chat-input');
+  var texto = input.value.trim();
+  if (!texto) return;
+  input.value = '';
+
+  agregarMensaje(texto, 'user');
+  iaChatHistory.push({ role: 'user', content: texto });
+
+  var typing = agregarMensaje('…', 'typing');
+
+  try {
+    var hoy = new Date().toISOString().split('T')[0];
+    var mensajes = [{ role: 'user', content: 'Fecha de hoy: ' + hoy }].concat(iaChatHistory);
+
+    var r = await fetch(PROXY_URL + '?msg=' + encodeURIComponent(JSON.stringify(mensajes)), {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    var data = await r.json();
+    var respuesta = data.text.trim();
+
+    typing.remove();
+    agregarMensaje(respuesta, 'bot');
+    iaChatHistory.push({ role: 'assistant', content: respuesta });
+
+    var csv = detectarCSV(respuesta);
+    if (csv) {
+      iaCSVDetectado = csv;
+      document.getElementById('ia-csv-preview').textContent = csv;
+      document.getElementById('ia-csv-bar').style.display = 'block';
+    }
+  } catch(err) {
+    typing.remove();
+    agregarMensaje('Error: ' + err.message, 'bot');
+  }
+}
+
+function usarCSV() {
+  if (!iaCSVDetectado) return;
+  document.getElementById('csv-input').value = iaCSVDetectado;
+  cerrarIAChat();
+}
+</script>
+<div id="ia-chat-overlay" onclick="cerrarIAChatSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
+  <div id="ia-chat-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;height:85vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);">
+    
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;">🤖</div>
+        <div>
+          <div style="font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:#fff;">Asistente IA</div>
+          <div style="font-size:11px;color:var(--muted);">Describe tu comida</div>
+        </div>
+      </div>
+      <div onclick="cerrarIAChat()" style="width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✕</div>
+    </div>
+
+    <!-- Mensajes -->
+    <div id="ia-chat-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;">
+      <div class="ia-msg-bot">Hola Fernando 👋 Descríbeme qué comiste y te genero el CSV listo para registrar.</div>
+    </div>
+
+    <!-- CSV detectado -->
+    <div id="ia-csv-bar" style="display:none;padding:.75rem 1.25rem;background:rgba(74,222,128,.08);border-top:1px solid rgba(74,222,128,.2);border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:6px;">CSV GENERADO</div>
+      <div id="ia-csv-preview" style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      <button onclick="usarCSV()" style="margin-top:8px;width:100%;padding:8px;border-radius:10px;background:var(--green);color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;">✅ Usar este CSV</button>
+    </div>
+
+    <!-- Input -->
+    <div style="padding:.75rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;">
+      <textarea id="ia-chat-input" rows="2" placeholder="Ej: comi 3 huevos con jamón a las 9am..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;resize:none;outline:none;line-height:1.4;" onkeydown="iaChatKeydown(event)"></textarea>
+      <button onclick="enviarIAChat()" style="width:40px;height:40px;border-radius:10px;background:var(--green);color:#000;border:none;font-size:1.1rem;cursor:pointer;flex-shrink:0;align-self:flex-end;">↑</button>
+    </div>
+
+  </div>
+</div>
+  
   <div id="revisar-overlay" onclick="cerrarRevisarSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
   <div id="revisar-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem .75rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2;">
