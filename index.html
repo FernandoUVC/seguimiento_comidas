@@ -1150,10 +1150,12 @@ async function probarProxy() {
   var PROXY = 'https://script.google.com/macros/s/AKfycbxFwc2bHkTrjScbjhVcQdZMYw2rFcwbA8mZNTsyj7dFl3ZwubtsFZMrqMg3Wdu9Hk0y/exec';
   
   var r = await fetch(PROXY + '?msg=' + encodeURIComponent('Responde solo: proxy funcionando'), {
-    redirect: 'follow'
+    method: 'GET',
+    redirect: 'follow',
+    mode: 'no-cors'
   });
-  var data = await r.json();
-  alert(data.text);
+  
+  alert('Llamada enviada — revisa el log en Apps Script');
 }
 </script>
 
