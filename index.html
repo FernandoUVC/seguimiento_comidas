@@ -1202,7 +1202,27 @@ async function enviarAIA() {
 
 var iaChatHistory = [];
 var iaCSVDetectado = '';
+function ajustarIAChat() {
+  var panel = document.getElementById('ia-chat-panel');
+  var messages = document.getElementById('ia-chat-messages');
+  if (!panel || !window.visualViewport) return;
+  
+  var vv = window.visualViewport;
+  panel.style.position = 'fixed';
+  panel.style.bottom = '0';
+  panel.style.left = '0';
+  panel.style.right = '0';
+  panel.style.top = vv.offsetTop + 'px';
+  panel.style.height = vv.height + 'px';
+  panel.style.maxHeight = vv.height + 'px';
+  
+  messages.scrollTop = messages.scrollHeight;
+}
 
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', ajustarIAChat);
+  window.visualViewport.addEventListener('scroll', ajustarIAChat);
+}
 function abrirIAChat() {
   iaChatHistory = [];
   iaCSVDetectado = '';
@@ -1213,6 +1233,7 @@ function abrirIAChat() {
   overlay.style.opacity = '1';
   overlay.style.pointerEvents = 'all';
   document.getElementById('ia-chat-panel').style.transform = 'translateY(0)';
+  ajustarIAChat();
   setTimeout(function(){ document.getElementById('ia-chat-input').focus(); }, 300);
 }
 
