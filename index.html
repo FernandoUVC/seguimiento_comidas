@@ -1151,11 +1151,10 @@ async function probarProxy() {
   
   var r = await fetch(PROXY + '?msg=' + encodeURIComponent('Responde solo: proxy funcionando'), {
     method: 'GET',
-    redirect: 'follow',
-    mode: 'no-cors'
+    redirect: 'follow'
   });
-  
-  alert('Llamada enviada — revisa el log en Apps Script');
+  var data = await r.json();
+  alert(data.text);
 }
 </script>
 
