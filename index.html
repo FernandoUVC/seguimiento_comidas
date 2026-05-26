@@ -132,6 +132,13 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
 /* Spinner */
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:14px;height:14px;border:2px solid rgba(96,165,250,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+/* ── BOTTOM NAV ── */
+body{padding-bottom:70px;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(24,28,39,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:flex-end;padding:10px 6px 12px;z-index:1000;box-shadow:0 -4px 20px rgba(0,0,0,.3);}
+.bottom-nav-item{background:none;border:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;cursor:pointer;flex:1;gap:4px;transition:color .2s;padding:0;min-height:48px;}
+.bottom-nav-item .nav-icon{font-size:1.4rem;line-height:1;transition:transform .2s;}
+.bottom-nav-item.active .nav-icon{transform:translateY(-2px);}
+.bottom-nav-item.active{color:var(--green);font-weight:700;}
 </style>
 </head>
 <body>
@@ -168,7 +175,25 @@ footer{text-align:center;padding:2rem 1.25rem;border-top:1px solid var(--border)
 <iframe name="hidden_iframe_gform" id="hidden_iframe_gform" style="display:none;" onload="onIframeLoad()"></iframe>
 
 <footer>
-  <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; v20 · Google Sheets</p>
+  <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; · Google Sheets</p>
+  <nav class="bottom-nav">
+  <button class="bottom-nav-item active" onclick="bottomNav(this,'dia')">
+    <span class="nav-icon">📊</span>
+    <span>Dashboard</span>
+  </button>
+  <button class="bottom-nav-item" onclick="bottomNav(this,'alertas')">
+    <span class="nav-icon">⚠️</span>
+    <span>Alertas</span>
+  </button>
+  <button class="bottom-nav-item" onclick="bottomNav(this,'consejos')">
+    <span class="nav-icon">💡</span>
+    <span>Consejos</span>
+  </button>
+  <button class="bottom-nav-item" onclick="bottomNav(this,'registro')">
+    <span class="nav-icon">✏️</span>
+    <span>Añadir</span>
+  </button>
+</nav>
 </footer>
 
 <script>
@@ -1115,6 +1140,15 @@ function formatHora(h) {
   var hm = h.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?m\.?|p\.?m\.?)?$/);
   if (!hm) return h;
   return hm[1] + ':' + hm[2] + (hm[3] ? ' ' + hm[3].replace(/\./g,'') : '');
+}
+function bottomNav(el, view) {
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Sincroniza con el sec-pill correspondiente
+  document.querySelectorAll('.sec-pill').forEach(p => {
+    p.classList.toggle('active', p.getAttribute('data-view') === view);
+  });
+  switchView(view);
 }
 </script>
 
