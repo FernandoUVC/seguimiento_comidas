@@ -1147,15 +1147,10 @@ function bottomNav(el, view) {
   updateView();
 }
 async function probarProxy() {
-  var url = 'AKFycbxFwc2bHkTrjScbjhVcQdZMYw2rFcwbA8mZNTsyj7dFl3ZwubtsFZMrqMg3Wdu9Hk0y';
-  var PROXY = 'https://script.google.com/macros/s/' + url + '/exec';
+  var PROXY = 'https://script.google.com/macros/s/AKfycbxFwc2bHkTrjScbjhVcQdZMYw2rFcwbA8mZNTsyj7dFl3ZwubtsFZMrqMg3Wdu9Hk0y/exec';
   
-  var r = await fetch(PROXY, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: [{ role: 'user', content: 'Responde solo: proxy funcionando' }]
-    })
+  var r = await fetch(PROXY + '?msg=' + encodeURIComponent('Responde solo: proxy funcionando'), {
+    redirect: 'follow'
   });
   var data = await r.json();
   alert(data.text);
