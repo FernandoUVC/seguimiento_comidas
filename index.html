@@ -169,7 +169,6 @@ body{padding-bottom:70px;}
 
 <main id="app"></main>
 
-<button onclick="probarProxy()" style="position:fixed;top:10px;right:10px;z-index:9999;background:var(--green);color:#000;border:none;padding:8px 14px;border-radius:10px;font-weight:700;cursor:pointer;">Probar IA</button>
 <!-- iframe oculto: receptor silencioso del submit de Google Forms -->
 <iframe name="hidden_iframe_gform" id="hidden_iframe_gform" style="display:none;" onload="onIframeLoad()"></iframe>
 
@@ -1165,16 +1164,6 @@ function bottomNav(el, view) {
   appState.view = view;
   appState.diaId = (view === 'dia') ? appState.diaId : null;
   updateView();
-}
-async function probarProxy() {
-  var PROXY = 'https://script.google.com/macros/s/AKfycbxFwc2bHkTrjScbjhVcQdZMYw2rFcwbA8mZNTsyj7dFl3ZwubtsFZMrqMg3Wdu9Hk0y/exec';
-  
-  var r = await fetch(PROXY + '?msg=' + encodeURIComponent('Responde solo: proxy funcionando'), {
-    method: 'GET',
-    redirect: 'follow'
-  });
-  var data = await r.json();
-  alert(data.text);
 }
   
 const PROXY_URL = 'https://script.google.com/macros/s/AKfycbxFwc2bHkTrjScbjhVcQdZMYw2rFcwbA8mZNTsyj7dFl3ZwubtsFZMrqMg3Wdu9Hk0y/exec';
