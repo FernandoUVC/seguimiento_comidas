@@ -857,6 +857,7 @@ function exportCSV() {
 function toggle(h) { h.parentElement.classList.toggle("open"); }
 
 window.onload = async function() {
+  renderHero();
   render();
   var pills = document.querySelectorAll(".sec-pill");
   pills.forEach(function(p){ p.onclick = function(){ setView(p.dataset.view); }; });
@@ -870,14 +871,6 @@ window.onload = async function() {
   if (!ok || DATA.dias.length === 0) return;
   var ultimo = DATA.dias[DATA.dias.length - 1];
   appState.diaId = ultimo.id; appState.view = "dia"; updateView();
-  function renderHero() {
-  var ahora = new Date();
-  var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  var semana = Math.ceil(ahora.getDate() / 7);
-  var texto = dias[ahora.getDay()] + ' ' + ahora.getDate() + ' de ' + meses[ahora.getMonth()] + ' · Semana ' + semana;
-  document.getElementById('hero-fecha').textContent = texto;
-}
 };
   
 // ─── MÓDULO REVISAR ────────────────────────────────────────────────
@@ -1327,6 +1320,16 @@ function usarCSV() {
   document.getElementById('csv-input').value = iaCSVDetectado;
   cerrarIAChat();
 }
+
+function renderHero() {
+  var ahora = new Date();
+  var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var semana = Math.ceil(ahora.getDate() / 7);
+  var texto = dias[ahora.getDay()] + ' ' + ahora.getDate() + ' de ' + meses[ahora.getMonth()] + ' · Semana ' + semana;
+  document.getElementById('hero-fecha').textContent = texto;
+}
+  
 </script>
 <div id="ia-chat-overlay" onclick="cerrarIAChatSiOverlay(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:flex-end;justify-content:center;">
   <div id="ia-chat-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;height:85vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);">
