@@ -145,8 +145,10 @@ body{padding-bottom:70px;}
 .ia-msg-typing{background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:var(--muted);align-self:flex-start;}
 
 #revisar-panel { padding-bottom: 80px; max-height: calc(100vh - 60px); }
-#revisar-overlay, #ia-chat-overlay { z-index: 200; }
-#revisar-overlay .rv-modal, #revisar-panel { z-index: 201; }
+#revisar-overlay { z-index: 300; }
+#ia-chat-overlay { z-index: 300; }
+#revisar-panel { z-index: 301; }
+.rv-modal { z-index: 302; }
 .bottom-nav { z-index: 150; }
 </style>
 </head>
