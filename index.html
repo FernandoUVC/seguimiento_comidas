@@ -745,8 +745,7 @@ function renderContexto() {
   html += "</div></div>"; return html;
 }
 function render() {
-  document.getElementById("hero-tag").textContent = "Semana " + DATA.meta.semana + " · " + DATA.meta.periodo;
-  document.getElementById("hero-meta").textContent = "Actualizado: " + DATA.meta.actualizado + " · " + DATA.meta.ubicacion;
+  // hero simplificado — fecha dinámica
 }
 
 var appState = { view: "dia", diaId: null };
