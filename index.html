@@ -144,7 +144,7 @@ body{padding-bottom:70px;}
 .ia-msg-user{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:var(--text);max-width:85%;align-self:flex-end;}
 .ia-msg-typing{background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:var(--muted);align-self:flex-start;}
 
-#revisar-panel { padding-bottom: 80px; }
+#revisar-panel { padding-bottom: 80px; max-height: calc(100vh - 60px); }
 </style>
 </head>
 <body>
@@ -1149,6 +1149,7 @@ function formatHora(h) {
   return hm[1] + ':' + hm[2] + (hm[3] ? ' ' + hm[3].replace(/\./g,'') : '');
 }
 function bottomNav(el, view) {
+  cerrarRevisar();
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   appState.view = view;
