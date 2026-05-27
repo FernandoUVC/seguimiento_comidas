@@ -144,6 +144,7 @@ body{padding-bottom:70px;}
 .ia-msg-user{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:var(--text);max-width:85%;align-self:flex-end;}
 .ia-msg-typing{background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:var(--muted);align-self:flex-start;}
 
+#revisar-panel { padding-bottom: 80px; }
 </style>
 </head>
 <body>
@@ -895,6 +896,7 @@ function abrirRevisar() {
   overlay.style.pointerEvents = 'all';
   overlay.style.opacity = '1';
   document.getElementById('revisar-panel').style.transform = 'translateY(0)';
+  document.body.style.overflow = 'hidden';
 }
 
 function cerrarRevisar() {
@@ -902,6 +904,7 @@ function cerrarRevisar() {
   overlay.style.opacity = '0';
   overlay.style.pointerEvents = 'none';
   document.getElementById('revisar-panel').style.transform = 'translateY(100%)';
+  document.body.style.overflow = '';
 }
 
 function cerrarRevisarSiOverlay(e) {
