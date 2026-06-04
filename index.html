@@ -750,13 +750,37 @@ function render() {
 }
 
 var appState = { view: "dia", diaId: null };
-var CAL_MESES = [
-  { mes: "Abril 2026",  primerOffset: 2, totalDias: 30, anio: 2026, mesNum: 4 },
-  { mes: "Mayo 2026",   primerOffset: 4, totalDias: 31, anio: 2026, mesNum: 5 }
-];
+function generarCAL_MESES() {
+  var hoy = new Date();
+  var meses = [];
+  var nombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var diasEnMes = function(anio, mes) { return new Date(anio, mes, 0).getDate(); };
+  var offsetPrimerDia = function(anio, mes) {
+    var d = new Date(anio, mes-1, 1).getDay();
+    return d === 0 ? 6 : d - 1; // Lunes=0
+  };
+  // Genera desde abril 2026 hasta el mes actual + 1
+  var inicio = { anio: 2026, mes: 4 };
+  var fin = { anio: hoy.getFullYear(), mes: hoy.getMonth() + 2 };
+  var anio = inicio.anio, mes = inicio.mes;
+  while (anio < fin.anio || (anio === fin.anio && mes <= fin.mes)) {
+    meses.push({
+      mes: nombres[mes-1] + ' ' + anio,
+      primerOffset: offsetPrimerDia(anio, mes),
+      totalDias: diasEnMes(anio, mes),
+      anio: anio,
+      mesNum: mes
+    });
+    mes++;
+    if (mes > 12) { mes = 1; anio++; }
+  }
+  return meses;
+}
+
+var CAL_MESES = generarCAL_MESES();
 var calMesIdx = CAL_MESES.length - 1;
 var CAL_META = CAL_MESES[CAL_MESES.length - 1];
-
+  
 function calNavMes(dir) {
   var newIdx = calMesIdx + dir;
   if (newIdx < 0 || newIdx >= CAL_MESES.length) return;
