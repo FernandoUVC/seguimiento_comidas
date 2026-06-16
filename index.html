@@ -1434,8 +1434,10 @@ function renderHero() {
     </div>
   </div>
 </div>
-  if ('serviceWorker' in navigator) {
+<script>
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
 }
+</script>
 </body>
 </html>
