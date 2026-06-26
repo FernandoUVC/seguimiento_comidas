@@ -191,9 +191,6 @@ body{padding-bottom:70px;}
 
 <main id="app"></main>
 
-<!-- iframe oculto: receptor silencioso del submit de Google Forms -->
-<iframe name="hidden_iframe_gform" id="hidden_iframe_gform" style="display:none;" onload="onIframeLoad()"></iframe>
-
 <footer>
   <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; · Google Sheets</p>
   <nav class="bottom-nav">
@@ -668,12 +665,17 @@ function renderTags(arr, cls) {
   return arr.map(function(t) { return '<span class="tag ' + cls + '">' + labelTag(t) + '</span>'; }).join("");
 }
 function renderComida(c) {
-  var alimentos = c.alimentos.map(function(a) { return '<div class="food-item"><div class="food-dot"></div>' + a + '</div>'; }).join("");
+  var alimentos = (c.alimentos || []).map(function(a) { return '<div class="food-item"><div class="food-dot"></div>' + a + '</div>'; }).join("");
+  var tags = c.tags || {};
+  var cubierto   = tags.cubierto    || [];
+  var atencion   = tags.atencion    || [];
+  var contexto   = tags.contexto    || [];
+  var suplementos = tags.suplementos || [];
   var secciones = "";
-  if (c.tags.cubierto.length > 0) secciones += '<div class="tag-section-title">Cubierto</div><div class="tag-grid">' + renderTags(c.tags.cubierto, "ok") + "</div>";
-  if (c.tags.atencion.length > 0) secciones += '<div class="tag-section-title">Atención</div><div class="tag-grid">' + renderTags(c.tags.atencion, "warn") + "</div>";
-  if (c.tags.contexto.length > 0) secciones += '<div class="tag-section-title">Contexto</div><div class="tag-grid">' + renderTags(c.tags.contexto, "ctx") + "</div>";
-  if (c.tags.suplementos.length > 0) secciones += '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' + renderTags(c.tags.suplementos, "purple") + "</div>";
+  if (cubierto.length > 0)    secciones += '<div class="tag-section-title">Cubierto</div><div class="tag-grid">' + renderTags(cubierto, "ok") + "</div>";
+  if (atencion.length > 0)    secciones += '<div class="tag-section-title">Atención</div><div class="tag-grid">' + renderTags(atencion, "warn") + "</div>";
+  if (contexto.length > 0)    secciones += '<div class="tag-section-title">Contexto</div><div class="tag-grid">' + renderTags(contexto, "ctx") + "</div>";
+  if (suplementos.length > 0) secciones += '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' + renderTags(suplementos, "purple") + "</div>";
   var nota = c.nota ? '<div class="note">' + c.nota + "</div>" : "";
   var supIndicators = "";
   if (c.tags.suplementos && c.tags.suplementos.length > 0) {
