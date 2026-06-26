@@ -17,7 +17,7 @@ const _fbApp = initializeApp({
   projectId: "nutrilog-fernando",
   storageBucket: "nutrilog-fernando.firebasestorage.app",
   messagingSenderId: "875790970031",
-  appId: "1:875790970037:web:cccab64f9ff6aba3d6b85a"
+  appId: "1:875790970031:web:cccab64f9ff6aba3d6b85a"
 });
 const _fbDB = getDatabase(_fbApp);
 window._fbGet = (path) => get(ref(_fbDB, path)).then(s => s.val());
