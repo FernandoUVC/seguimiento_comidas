@@ -821,9 +821,15 @@ function updateView() {
   renderCalendar();
   var app = document.getElementById("app");
   if (appState.view === "dia") {
-    if (!appState.diaId) { app.innerHTML = '<div class="empty-state"><span>📅</span>Selecciona un día en el calendario</div>'; return; }
-    var dia = DATA.dias.find(function(d){ return d.id === appState.diaId; });
-    app.innerHTML = dia ? renderDia(dia) : '<div class="empty-state"><span>🔍</span>Día no encontrado</div>';
+  if (!appState.diaId && DATA.dias.length > 0) {
+    appState.diaId = DATA.dias[DATA.dias.length - 1].id;
+  }
+  if (!appState.diaId) {
+    app.innerHTML = '<div class="empty-state"><span>📅</span>Selecciona un día en el calendario</div>';
+    return;
+  }
+  var dia = DATA.dias.find(function(d){ return d.id === appState.diaId; });
+  app.innerHTML = dia ? renderDia(dia) : '<div class="empty-state"><span>🔍</span>Día no encontrado</div>';
   } else if (appState.view === "semana" || appState.view === "mes") {
     app.innerHTML = renderResumen() + renderAlertas() + renderConsejos();
   } else if (appState.view === "contexto") {
@@ -844,7 +850,8 @@ function selectDia(id) {
   setTimeout(function(){ var app = document.getElementById("app"); if (app) app.scrollIntoView({behavior:"smooth",block:"start"}); }, 50);
 }
 function setView(v) {
-  appState.view = v; appState.diaId = null; updateView();
+  appState.view = v;
+  updateView();
   setTimeout(function(){ var app = document.getElementById("app"); if (app) app.scrollIntoView({behavior:"smooth",block:"start"}); }, 50);
 }
 
@@ -1166,7 +1173,6 @@ function bottomNav(el, view) {
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   appState.view = view;
-  appState.diaId = (view === 'dia') ? appState.diaId : null;
   updateView();
 }
   
