@@ -7,6 +7,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro Nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getDatabase, ref, get, set, child } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js';
+const _fbApp = initializeApp({
+  apiKey: "AIzaSyBqnZslitqXoS0g3NtoT5PnNnTQ5KYxSzw",
+  authDomain: "nutrilog-fernando.firebaseapp.com",
+  databaseURL: "https://nutrilog-fernando-default-rtdb.firebaseio.com",
+  projectId: "nutrilog-fernando",
+  storageBucket: "nutrilog-fernando.firebasestorage.app",
+  messagingSenderId: "875790970031",
+  appId: "1:875790970037:web:cccab64f9ff6aba3d6b85a"
+});
+const _fbDB = getDatabase(_fbApp);
+window._fbGet = (path) => get(ref(_fbDB, path)).then(s => s.val());
+window._fbSet = (path, value) => set(ref(_fbDB, path), value);
+window._fbGetMes = (anio, mes) => get(child(ref(_fbDB), `registros/${anio}/${mes}`)).then(s => s.val());
+</script>
 <style>
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2435;--border:#2a3045;--text:#e8eaf0;--muted:#6b7280;--green:#4ade80;--green-bg:#052e16;--yellow:#fbbf24;--yellow-bg:#1c1400;--red:#f87171;--red-bg:#2d0a0a;--blue:#60a5fa;--blue-bg:#0a1628;--purple:#c084fc;--purple-bg:#1a0a2e;--orange:#fb923c;--accent:#4ade80;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -275,95 +292,16 @@ const TAG_CATALOG = {
 };
 
 // ─────────────────────────────────────────────
-//  DATA
+//  DATA — ahora vive en Firebase
 // ─────────────────────────────────────────────
 const DATA = {
-  meta: {
-    semana: 1,
-    periodo: "17 abr – 28 abr 2026",
-    version: "v20",
-    actualizado: "Mar 28 abr 2026 · 21:50",
-    ubicacion: "Cancún / Puerto Morelos"
-  },
-  contexto: [
-    { label: "Cena casi diaria",   valor: "Yogurt Griego Yoplait Natural (11g proteína/150g) + moras azules + fresas congeladas + semillas de girasol" },
-    { label: "Extras cena",        valor: "Chia, cacahuates, ajonjolí, canela, semillas de calabaza, nuez de la india" },
-    { label: "Desayuno habitual",  valor: "Mínimo 2 huevos (con frijoles, jamón, tocino, o solos)" },
-    { label: "Menjurje Matutino",  valor: "7/8 cup Jumex Único Fresco (o mitad agua tibia / mitad jugo) · 1 tsp Aceite de oliva frío Inés · 1/2 tsp Cúrcuma · 1 pizca Pimienta negra · 1 pizca Cayena · 1/8 tsp Clavo molido · 1/4 tsp Canela · 1/2 tsp Matcha · 1/2 tsp Jengibre · 1 tbsp Vinagre de sidra con la madre · 1 tsp Miel natural · 1 tbsp Jugo de limón fresco · 1/2 tsp Ralladura de limón. Preferentemente en ayunas." },
-    { label: "Double X Nutrilite (media dosis)", valor: "Vitaminas: A, B1, B6, B12, C 200mg, D3 400UI, E, Folato, Biotina. Minerales: Calcio 500mg, Magnesio 200mg, Zinc 15mg, Selenio 70mcg, Cromo 120mcg. Fitoquímicos: Quercetina 100mg, Romero 156mg, Cúrcuma 34mg, Bayas antioxidantes 40mg, Complejo verde AWPS 40mg, Luteína 2mg, Licopeno 1mg, Acerola 141mg. Dosis completa = 2 de cada sección." },
-    { label: "Omega-3 Plus Nutrilite", valor: "Omega-3 total 600mg: EPA 300mg + DHA 300mg. Vitamina E 6.7mg (antioxidante protector). 9 kcal por cápsula." },
-    { label: "Déficit crónico",    valor: "Frutas frescas de día, verduras de hoja, vegetales en general" },
-    { label: "Tiendas",            valor: "Costco, Walmart, Chedraui, Super Aki (Cancún / Puerto Morelos)" }
-  ],
-  dias: [],
-  resumen: {
-    categorias: [
-      {
-        id: "proteina", nombre: "Proteína",
-        evaluacion: { vie17:"BIEN", sab18:"EXCELENTE", dom19:"EXCELENTE", lun20:"EXCELENTE", mar21:"EXCELENTE", mie22:"BIEN", jue23:"BIEN", vie24:"BIEN", sab25:"EXCELENTE", dom26:"BIEN", lun27:"EXCELENTE" },
-        nota_claude: "12 días sin excepción. Mar28: huevo + salchicha + pollo (caldo) + amaranto — cuádruple fuente en desayuno."
-      },
-      {
-        id: "vegetales", nombre: "Vegetales",
-        evaluacion: { vie17:"AUSENTE", sab18:"BIEN", dom19:"EXCELENTE", lun20:"PARCIAL", mar21:"AUSENTE", mie22:"EXCELENTE", jue23:"EXCELENTE", vie24:"AUSENTE", sab25:"EXCELENTE", dom26:"AUSENTE", lun27:"EXCELENTE" },
-        nota_claude: "Patrón claro: excelentes en días de comida elaborada, ausentes en días ligeros. Lun27 rompe el patrón definitivamente."
-      },
-      {
-        id: "vitamina_c", nombre: "Vitamina C",
-        evaluacion: { vie17:"PARCIAL", sab18:"BIEN", dom19:"BIEN", lun20:"PARCIAL", mar21:"PARCIAL", mie22:"PARCIAL", jue23:"EXCELENTE", vie24:"BIEN", sab25:"EXCELENTE", dom26:"PARCIAL", lun27:"EXCELENTE" },
-        nota_claude: "Lun27: kiwi + jitomate + zanahoria + naranja + limones de limonada = cinco fuentes. Máximo histórico del registro."
-      },
-      {
-        id: "fibra", nombre: "Fibra vegetal",
-        evaluacion: { vie17:"PARCIAL", sab18:"BIEN", dom19:"BIEN", lun20:"PARCIAL", mar21:"BIEN", mie22:"EXCELENTE", jue23:"EXCELENTE", vie24:"BIEN", sab25:"EXCELENTE", dom26:"PARCIAL", lun27:"EXCELENTE" },
-        nota_claude: "Lun27: espinacas + zanahoria + kiwi + garbanzos + jícama + pepino + nopalitos = mejor día de fibra del registro."
-      },
-      {
-        id: "sodio", nombre: "Sodio",
-        evaluacion: { vie17:"MODERADO", sab18:"ALTO", dom19:"MODERADO", lun20:"ALTO", mar21:"MODERADO", mie22:"ALTO", jue23:"ALTO", vie24:"MODERADO", sab25:"MUY_ALTO", dom26:"MODERADO", lun27:"MODERADO" },
-        nota_claude: "Patrón sostenido: latas, embutidos y comida fuera son las fuentes principales."
-      },
-      {
-        id: "grasas", nombre: "Grasas saludables",
-        evaluacion: { vie17:"BIEN", sab18:"BIEN", dom19:"BIEN", lun20:"BIEN", mar21:"EXCELENTE", mie22:"BIEN", jue23:"BIEN", vie24:"BIEN", sab25:"EXCELENTE", dom26:"BIEN", lun27:"BIEN" },
-        nota_claude: "Aguacate y bowl nocturno cubren esto de manera muy consistente."
-      }
-    ]
-  },
-  alertas: [
-    { tipo: "warn", icono: "⚠️", titulo: "Sodio crónico elevado",        detalle: "9 de 11 días con sodio moderado o alto. Fuentes: latas, embutidos, salsas comerciales, snacks de cine." },
-    { tipo: "good", icono: "🥦", titulo: "Brócoli: primera vez en el registro (mar28)", detalle: "El vegetal crucífero más completo — vitamina C, K, folato y sulforafano. Dos pescados en una noche: tilapia + salmón." },
-    { tipo: "good", icono: "🍊", titulo: "Vitamina C en 5 fuentes distintas — lun27", detalle: "Kiwi + jitomate + zanahoria + naranja + limones. Máximo histórico del registro." },
-    { tipo: "good", icono: "✅", titulo: "Proteína impecable",            detalle: "11 días sin excepción. Fuentes variadas: huevo, pollo, pescado, frijoles, amaranto, atún." },
-    { tipo: "good", icono: "✅", titulo: "Consejos aplicados al comportamiento real", detalle: "3 instancias documentadas: aguacate+agua post-jamón, plátano post-cine, fruta fresca de día." },
-    { tipo: "info", icono: "📈", titulo: "Tendencia positiva sostenida",  detalle: "Los últimos 4 días son los mejores del período. Lun27 es el desayuno más completo en vegetales." }
-  ],
-  consejos: [
-    { emoji: "🥕", texto: "Zanahoria o espinaca en días ligeros: una zanahoria o un puñado de espinacas cubre vitamina A y K sin esfuerzo." },
-    { emoji: "🍊", texto: "Una fruta fresca durante el día: naranja, kiwi o toronja — no en el bowl nocturno. La vitamina C mejora la absorción de hierro de los frijoles." },
-    { emoji: "🥫", texto: "Frijoles de olla > lata: una olla semanal elimina el sodio de las latas sin cambiar el hábito de consumo." },
-    { emoji: "🌿", texto: "Salsa casera vs comercial: jitomate + chile + cilantro licuados = mismo sabor, cero sodio." },
-    { emoji: "💧", texto: "Hidratación activa: incorporarla proactivamente durante el día, no solo como reacción al sodio alto." },
-    { emoji: "🌵", texto: "Nopalitos: fibra soluble, calcio vegetal, vitamina C y regulación de glucosa postprandial. Disponibles en cualquier Super Aki o Chedraui." },
-    { emoji: "🥩", texto: "Arrachera a la plancha sin aceite extra: hierro hemo de alta calidad, zinc, B12 y sin frituras." },
-    { emoji: "🥦", texto: "Brócoli empapelado con pescado: conserva el sulforafano mejor que hervido, vitamina C intacta." },
-    { emoji: "🐟", texto: "Salmón tiene astaxantina — uno de los antioxidantes más potentes de origen animal. Incorporarlo una vez por semana ya marca diferencia." }
-  ]
+  meta:     {},
+  contexto: [],
+  dias:     [],
+  resumen:  { categorias: [] },
+  alertas:  [],
+  consejos: []
 };
-
-// ─────────────────────────────────────────────
-//  GOOGLE SHEETS — carga dinámica
-// ─────────────────────────────────────────────
-var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=1969338442&single=true&output=csv';
-const ALERTAS_CSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=1680934207&single=true&output=csv';
-const CONSEJOS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFwVwj-1-DDWpkAJCMDtbiRDF-G6q2no2wb6rLrusEDZinoWQl93lwqoMOBn1ObaSIDD9estLuxUUY/pub?gid=160987466&single=true&output=csv';
-// ─────────────────────────────────────────────
-//  GOOGLE FORM — embed nativo
-//  action: URL real de tu form (formResponse)
-//  entry:  ID del campo extraído del DOM de Google Forms
-// ─────────────────────────────────────────────
-var GFORM_ACTION  = 'https://docs.google.com/forms/d/e/1FAIpQLSedGj3P5bP3t3n-ezENOUDx3dEqWlRSqinpaL1mDPUIEyx1xg/formResponse';
-var GFORM_ENTRY   = 'entry.1464657122';
 
 // Estado del form
 var formState = { submitted: false, sending: false };
@@ -390,39 +328,59 @@ function showFormStatus(type, msg) {
   }
 }
 
-function submitGForm() {
+async function submitGForm() {
   var csv = document.getElementById('csv-input').value.trim();
-  if (!csv) {
-    showFormStatus('err', '⚠️ Pega el CSV antes de enviar.');
-    return;
-  }
-
-  // Rellena el input oculto del form real
-  document.getElementById('gform-entry').value = csv;
-
-  formState.sending = true;
-  formState.submitted = false;
-
-  showFormStatus('sending', 'Enviando al Sheet…');
+  if (!csv) { showFormStatus('err', '⚠️ Pega el CSV antes de enviar.'); return; }
+  var cols = csv.split(',');
+  if (cols.length < 5) { showFormStatus('err', '⚠️ CSV inválido — revisa el formato.'); return; }
+  showFormStatus('sending', 'Guardando en Firebase…');
   document.getElementById('btn-submit').disabled = true;
-  document.getElementById('btn-submit').textContent = 'Enviando…';
-
-  // Submit apunta al iframe oculto — la página no recarga
-  document.getElementById('gform-real').submit();
-
-  // Timeout de seguridad: si el iframe no responde en 8s, asumimos éxito
-  // (Google Forms a veces no dispara onload en cross-origin)
-  setTimeout(function() {
-    if (formState.sending) {
-      formState.sending = false;
-      showFormStatus('ok', '✅ Enviado (sin confirmación de red — verifica el Sheet en ~30 s).');
-      document.getElementById('csv-input').value = '';
-      document.getElementById('btn-submit').disabled = false;
-      document.getElementById('btn-submit').textContent = '↑ Enviar';
+  document.getElementById('btn-submit').textContent = 'Guardando…';
+  try {
+    var fecha   = cols[0].trim();
+    var diaId   = cols[1].trim();
+    var partes  = fecha.split('-');
+    var anio    = partes[0];
+    var mes     = partes[1];
+    var comidaId = (cols[4] || '').trim().replace(/[.#$/\[\]]/g,'_') || diaId + '_cx';
+    function splitPipe(s){ return s ? s.split('|').map(function(x){return x.trim();}).filter(Boolean) : []; }
+    var comida = {
+      titulo:    (cols[5]||'').trim(),
+      hora:      (cols[6]||'').trim(),
+      icono:     (cols[7]||'🍽️').trim(),
+      alimentos: splitPipe(cols[8]),
+      tags: {
+        cubierto:    splitPipe(cols[9]),
+        atencion:    splitPipe(cols[10]),
+        contexto:    splitPipe(cols[11]),
+        suplementos: splitPipe(cols[12])
+      },
+      nota: (cols[13]||'').trim()
+    };
+    // Escribe o actualiza la comida
+    await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/comidas/' + comidaId, comida);
+    // Escribe meta del día (no sobreescribe si ya existe)
+    var metaExistente = await window._fbGet('registros/' + anio + '/' + mes + '/' + diaId + '/meta');
+    if (!metaExistente) {
+      var d = new Date(fecha + 'T12:00:00');
+      var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      var etiqueta = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()];
+      await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/meta', {
+        fecha: fecha, dia_id: diaId, etiqueta: etiqueta, resumen_dia: (cols[3]||'').trim()
+      });
     }
-  }, 8000);
+    showFormStatus('ok', '✅ Guardado en Firebase. Recarga la vista Día para verlo.');
+    document.getElementById('csv-input').value = '';
+    document.getElementById('btn-submit').disabled = false;
+    document.getElementById('btn-submit').textContent = '↑ Enviar';
+  } catch(e) {
+    showFormStatus('err', '⚠️ Error al guardar: ' + e.message);
+    document.getElementById('btn-submit').disabled = false;
+    document.getElementById('btn-submit').textContent = '↑ Enviar';
+  }
 }
-
+  
 function renderRegistro() {
   return '<div id="registro-view">' +
     '<div class="section-header"><h2>Registrar comida</h2><div class="section-line"></div></div>' +
@@ -589,56 +547,58 @@ async function cargarRegistros() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
   try {
-    var res = await fetch(SHEET_CSV);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var text = await res.text();
-    var rows = parseCSVText(text);
-    DATA.dias = csvRowsToDias(rows);
-    if (DATA.dias.length === 0) throw new Error('El sheet no devolvió registros válidos');
+    var hoy = new Date();
+    var anio = String(hoy.getFullYear());
+    var mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+    // Carga el mes actual y el anterior para tener contexto de semana completa
+    var mesAnteriorNum = hoy.getMonth(); // 0-based = mes anterior
+    var anioAnterior  = mesAnteriorNum === 0 ? String(hoy.getFullYear() - 1) : anio;
+    var mesAnterior   = mesAnteriorNum === 0 ? '12' : String(mesAnteriorNum).padStart(2, '0');
+    var [dataMesActual, dataMesAnterior] = await Promise.all([
+      window._fbGetMes(anio, mes),
+      window._fbGetMes(anioAnterior, mesAnterior)
+    ]);
+    var diasMap = Object.assign({}, dataMesAnterior || {}, dataMesActual || {});
+    if (!diasMap || Object.keys(diasMap).length === 0) throw new Error('Sin registros en Firebase');
+    DATA.dias = Object.values(diasMap)
+      .map(function(d) {
+        var comidasArr = d.comidas
+          ? Object.values(d.comidas).sort(function(a,b){ return (a.hora||'').localeCompare(b.hora||''); })
+          : [];
+        return {
+          id:         d.meta.dia_id,
+          fecha:      d.meta.fecha,
+          etiqueta:   d.meta.etiqueta,
+          resumen_dia: d.meta.resumen_dia,
+          comidas:    comidasArr
+        };
+      })
+      .sort(function(a,b){ return a.fecha.localeCompare(b.fecha); });
     return true;
   } catch(e) {
-    console.error('[Sheet] Error:', e);
-    app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4">⚠️</span><div style="color:var(--muted);font-size:13px">No se pudieron cargar los registros.<br><small>' + e.message + '</small></div></div>';
+    console.error('[Firebase] cargarRegistros error:', e);
+    document.getElementById('app').innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4">⚠️</span><div style="color:var(--muted);font-size:13px">No se pudieron cargar los registros.<br><small>' + e.message + '</small></div></div>';
     return false;
   }
 }
+
 async function cargarAlertas() {
   try {
-    var res = await fetch(ALERTAS_CSV);
-    if (!res.ok) return;
-    var text = await res.text();
-    var rows = parseCSVText(text).slice(2);
-    DATA.alertas = rows
-      .filter(function(r) { return r[0]; })
-      .map(function(r) {
-        return {
-          tipo:    (r[0] || '').trim(),
-          icono:   (r[1] || '').trim(),
-          titulo:  (r[2] || '').trim(),
-          detalle: (r[3] || '').trim()
-        };
-      });
+    var data = await window._fbGet('alertas');
+    if (!data) return;
+    DATA.alertas = Object.values(data);
   } catch(e) {
-    console.error('[Alertas] Error:', e);
+    console.error('[Firebase] cargarAlertas error:', e);
   }
 }
 
 async function cargarConsejos() {
   try {
-    var res = await fetch(CONSEJOS_CSV);
-    if (!res.ok) return;
-    var text = await res.text();
-    var rows = parseCSVText(text).slice(2);
-    DATA.consejos = rows
-      .filter(function(r) { return r[0]; })
-      .map(function(r) {
-        return {
-          emoji: (r[0] || '').trim(),
-          texto: (r[1] || '').trim()
-        };
-      });
+    var data = await window._fbGet('consejos');
+    if (!data) return;
+    DATA.consejos = Object.values(data);
   } catch(e) {
-    console.error('[Consejos] Error:', e);
+    console.error('[Firebase] cargarConsejos error:', e);
   }
 }
 function contarTagAtencion(tagKey) {
