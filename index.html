@@ -613,15 +613,15 @@ async function ejecutarAnalisisIA(modo) {
   if (btnProfundo) btnProfundo.disabled = true;
 
   try {
-    var r = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model:      modelo,
-        max_tokens: maxTok,
-        system:     systemPrompt,
-        messages:   [{ role: 'user', content: registrosTexto }]
-      })
+    var payload = {
+      model:      modelo,
+      max_tokens: maxTok,
+      system:     systemPrompt,
+      messages:   [{ role: 'user', content: registrosTexto }]
+    };
+    var r = await fetch(PROXY_URL + '?analisis=' + encodeURIComponent(JSON.stringify(payload)), {
+      method: 'GET',
+      redirect: 'follow'
     });
     var data = await r.json();
     var respuesta = (data.text || '').trim();
