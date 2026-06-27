@@ -1237,20 +1237,55 @@ function rvVolverPaso1() {
   document.getElementById('rvps2').style.color='var(--muted)';
 }
 
-function rvEnviar() {
-  var csv=document.getElementById('rv-csv-final').textContent;
-  document.getElementById('gform-entry').value=csv;
-  document.getElementById('rv-send-status').style.display='block';
-  document.getElementById('rv-send-status').style.cssText='display:block;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa33;';
-  document.getElementById('rv-send-status').textContent='Enviando al Sheet…';
-  document.getElementById('rv-send-actions').style.display='none';
-  document.getElementById('gform-real').submit();
-  setTimeout(function(){
-    document.getElementById('rv-send-status').style.display='none';
-    document.getElementById('rv-send-success').style.display='block';
-    document.getElementById('csv-input').value=csv;
-  }, 8000);
+async function rvEnviar() {
+  var csv = document.getElementById('rv-csv-final').textContent;
+  if (!csv) return;
+  var cols = csv.split(',');
+  document.getElementById('rv-send-status').style.display = 'block';
+  document.getElementById('rv-send-status').style.cssText = 'display:block;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa33;';
+  document.getElementById('rv-send-status').textContent = 'Guardando en Firebase…';
+  document.getElementById('rv-send-actions').style.display = 'none';
+  try {
+    var fecha    = cols[0].trim();
+    var diaId    = cols[1].trim();
+    var partes   = fecha.split('-');
+    var anio     = partes[0];
+    var mes      = partes[1];
+    var comidaId = (cols[4] || '').trim().replace(/[.#$/\[\]]/g,'_') || diaId + '_cx';
+    function splitPipe(s){ return s ? s.split('|').map(function(x){return x.trim();}).filter(Boolean) : []; }
+    var comida = {
+      titulo:    (cols[5]||'').trim(),
+      hora:      (cols[6]||'').trim(),
+      icono:     (cols[7]||'🍽️').trim(),
+      alimentos: splitPipe(cols[8]),
+      tags: {
+        cubierto:    splitPipe(cols[9]),
+        atencion:    splitPipe(cols[10]),
+        contexto:    splitPipe(cols[11]),
+        suplementos: splitPipe(cols[12])
+      },
+      nota: (cols[13]||'').trim()
+    };
+    await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/comidas/' + comidaId, comida);
+    var metaExistente = await window._fbGet('registros/' + anio + '/' + mes + '/' + diaId + '/meta');
+    if (!metaExistente) {
+      var d = new Date(fecha + 'T12:00:00');
+      var dias2  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      var meses2 = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      var etiqueta = dias2[d.getDay()] + ' ' + d.getDate() + ' de ' + meses2[d.getMonth()];
+      await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/meta', {
+        fecha: fecha, dia_id: diaId, etiqueta: etiqueta, resumen_dia: (cols[3]||'').trim()
+      });
+    }
+    document.getElementById('rv-send-status').style.display = 'none';
+    document.getElementById('rv-send-success').style.display = 'block';
+    document.getElementById('csv-input').value = csv;
+  } catch(e) {
+    document.getElementById('rv-send-status').textContent = '⚠️ Error: ' + e.message;
+    document.getElementById('rv-send-actions').style.display = 'flex';
+  }
 }
+  
 function formatHora(h) {
   if (!h) return '';
   h = h.trim().toLowerCase();
