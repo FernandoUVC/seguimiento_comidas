@@ -392,7 +392,7 @@ function renderRegistro() {
       '<div class="registro-form-header">' +
         '<div class="form-icon">✏️</div>' +
         '<div><div class="form-title">Nueva entrada CSV</div>' +
-        '<div class="form-sub">Se enviará directo al Sheet vía Google Forms</div></div>' +
+        '<div class="form-sub">Se guardará directo en Firebase</div></div>' +
       '</div>' +
       '<div class="registro-form-body">' +
         '<label class="csv-label" for="csv-input">Fila CSV</label>' +
@@ -407,16 +407,7 @@ function renderRegistro() {
         '<div class="form-status" id="form-status"></div>' +
       '</div>' +
     '</div>' +
-
-    // Form real oculto — apunta al iframe silencioso
-    '<form id="gform-real" ' +
-      'action="' + GFORM_ACTION + '" ' +
-      'method="POST" ' +
-      'target="hidden_iframe_gform" ' +
-      'style="display:none;">' +
-      '<input type="text" id="gform-entry" name="' + GFORM_ENTRY + '" value="">' +
-    '</form>' +
-
+    
     '<div class="section-header" style="margin-top:1.5rem"><h2>Referencia rápida</h2><div class="section-line"></div></div>' +
     '<div class="registro-tips">' +
       '<div class="tip-card"><div class="tip-icon">📋</div><div><strong style="font-size:12px;color:var(--text)">Columnas (14 en total)</strong><br>' +
