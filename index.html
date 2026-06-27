@@ -484,24 +484,6 @@ function exportarAnalisisCSV() {
 function prepararAnalisis() {
   var nivel = document.getElementById('analisis-nivel').value;
   var periodo = document.getElementById('analisis-periodo').value;
-  var hoy = new Date();
-  var desde = new Date();
-
-  if (periodo === 'hoy') { desde = new Date(hoy); }
-  else if (periodo === 'semana') { desde.setDate(hoy.getDate() - 7); }
-  else if (periodo === 'mes') { desde.setDate(hoy.getDate() - 30); }
-  else if (periodo === 'tres_meses') { desde.setDate(hoy.getDate() - 90); }
-
-  var diasFiltrados = DATA.dias.filter(function(dia) {
-    var f = new Date(dia.fecha);
-    return f >= desde && f <= hoy;
-  });
-
-  if (diasFiltrados.length === 0) {
-    document.getElementById('analisis-output').value = 'No hay registros en este periodo.';
-    return;
-  }
-
   var lineas = [];
   lineas.push('=== ANÁLISIS NUTRICIONAL ===');
   lineas.push('Periodo: ' + periodo + ' | Nivel: ' + nivel);
@@ -555,46 +537,7 @@ async function ejecutarAnalisisIA(modo) {
     document.getElementById('analisis-ia-output').innerHTML = '<p style="color:var(--muted);font-size:13px;">No hay registros en este período.</p>';
     return;
   }
-
-  // Armar texto de registros (reutiliza lógica de prepararAnalisis)
-  var lineas = ['Período: ' + periodo + ' | Nivel: ' + nivel + ' | Días: ' + diasFiltrados.length, ''];
-  diasFiltrados.forEach(function(dia) {
-    lineas.push('── ' + dia.etiqueta + ' (' + dia.fecha + ')');
-    dia.comidas.forEach(function(c) {
-      var tags = c.tags || {};
-      var linea = '  [' + (c.hora||'?') + '] ' + c.titulo;
-      if (nivel === 'minimo') {
-        linea += ' | cubierto: ' + (tags.cubierto||[]).join(', ');
-        linea += ' | atencion: ' + (tags.atencion||[]).join(', ');
-      } else if (nivel === 'recomendado') {
-        linea += ' | alimentos: ' + (c.alimentos||[]).join(', ');
-        linea += ' | cubierto: ' + (tags.cubierto||[]).join(', ');
-        linea += ' | atencion: ' + (tags.atencion||[]).join(', ');
-        linea += ' | contexto: ' + (tags.contexto||[]).join(', ');
-      } else {
-        linea += ' | alimentos: ' + (c.alimentos||[]).join(', ');
-        linea += ' | cubierto: ' + (tags.cubierto||[]).join(', ');
-        linea += ' | atencion: ' + (tags.atencion||[]).join(', ');
-        linea += ' | contexto: ' + (tags.contexto||[]).join(', ');
-        linea += ' | suplementos: ' + (tags.suplementos||[]).join(', ');
-        if (c.nota) linea += ' | nota: ' + c.nota;
-      }
-      lineas.push(linea);
-    });
-    lineas.push('');
-  });
-  var registrosTexto = lineas.join('\n');
-
-  // System prompts según modo
-  var systemRapido = 'Eres un analista nutricional personal de Fernando. Recibirás un resumen de sus registros de comidas. Responde con un análisis conversacional, directo y útil en 3-5 párrafos cortos. Menciona patrones positivos, alertas concretas y 1-2 sugerencias accionables. No uses listas largas. Tono cercano, como un nutriólogo que lo conoce bien.';
-
-  var systemProfundo = 'Eres un analista nutricional personal de Fernando. Recibirás un resumen de sus registros de comidas. Responde ÚNICAMENTE con un objeto JSON válido, sin texto antes ni después, sin markdown, sin comillas extras. El JSON debe tener exactamente esta estructura:\n{\n  "analisis": "texto del análisis en 3-4 párrafos",\n  "alertas": [\n    { "tipo": "warn", "icono": "⚠️", "titulo": "Título corto", "detalle": "Detalle explicativo" }\n  ],\n  "consejos": [\n    { "emoji": "🥬", "texto": "Consejo accionable y específico" }\n  ]\n}\nTipos de alerta válidos: warn, good, info. Genera entre 3-6 alertas y 3-5 consejos basados en patrones reales de los datos. Sé específico con los alimentos que aparecen en el registro.';
-
-  var esRapido = (modo === 'rapido');
-  var systemPrompt = esRapido ? systemRapido : systemProfundo;
-  var maxTok = esRapido ? 800 : 2000;
-  var modelo = esRapido ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6';
-
+  
   // UI — loading
   var outputEl = document.getElementById('analisis-ia-output');
   var btnRapido   = document.getElementById('btn-analisis-rapido');
@@ -604,16 +547,11 @@ async function ejecutarAnalisisIA(modo) {
   if (btnProfundo) btnProfundo.disabled = true;
 
   try {
-    var payload = {
-      model:      modelo,
-      max_tokens: maxTok,
-      system:     systemPrompt,
-      messages:   [{ role: 'user', content: registrosTexto }]
-    };
-    var r = await fetch(PROXY_URL + '?analisis=' + encodeURIComponent(JSON.stringify(payload)), {
+    var r = await fetch(PROXY_URL + '?analisis2=' + encodeURIComponent(periodo + '|' + nivel + '|' + modo), {
       method: 'GET',
       redirect: 'follow'
     });
+    
     var data = await r.json();
     var respuesta = (data.text || '').trim();
 
