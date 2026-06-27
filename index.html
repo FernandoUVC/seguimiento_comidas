@@ -544,6 +544,162 @@ function prepararAnalisis() {
 
   document.getElementById('analisis-output').value = lineas.join('\n');
 }
+async function ejecutarAnalisisIA(modo) {
+  var nivel   = document.getElementById('analisis-nivel').value;
+  var periodo = document.getElementById('analisis-periodo').value;
+  var hoy     = new Date();
+  var desde   = new Date();
+
+  if (periodo === 'hoy')         desde = new Date(hoy);
+  else if (periodo === 'semana') desde.setDate(hoy.getDate() - 7);
+  else if (periodo === 'mes')    desde.setDate(hoy.getDate() - 30);
+  else if (periodo === 'tres_meses') desde.setDate(hoy.getDate() - 90);
+
+  var diasFiltrados = DATA.dias.filter(function(dia) {
+    var f = new Date(dia.fecha + 'T12:00:00');
+    return f >= desde && f <= hoy;
+  });
+
+  if (diasFiltrados.length === 0) {
+    document.getElementById('analisis-ia-output').innerHTML = '<p style="color:var(--muted);font-size:13px;">No hay registros en este período.</p>';
+    return;
+  }
+
+  // Armar texto de registros (reutiliza lógica de prepararAnalisis)
+  var lineas = ['Período: ' + periodo + ' | Nivel: ' + nivel + ' | Días: ' + diasFiltrados.length, ''];
+  diasFiltrados.forEach(function(dia) {
+    lineas.push('── ' + dia.etiqueta + ' (' + dia.fecha + ')');
+    dia.comidas.forEach(function(c) {
+      var tags = c.tags || {};
+      var linea = '  [' + (c.hora||'?') + '] ' + c.titulo;
+      if (nivel === 'minimo') {
+        linea += ' | cubierto: ' + (tags.cubierto||[]).join(', ');
+        linea += ' | atencion: ' + (tags.atencion||[]).join(', ');
+      } else if (nivel === 'recomendado') {
+        linea += ' | alimentos: ' + (c.alimentos||[]).join(', ');
+        linea += ' | cubierto: ' + (tags.cubierto||[]).join(', ');
+        linea += ' | atencion: ' + (tags.atencion||[]).join(', ');
+        linea += ' | contexto: ' + (tags.contexto||[]).join(', ');
+      } else {
+        linea += ' | alimentos: ' + (c.alimentos||[]).join(', ');
+        linea += ' | cubierto: ' + (tags.cubierto||[]).join(', ');
+        linea += ' | atencion: ' + (tags.atencion||[]).join(', ');
+        linea += ' | contexto: ' + (tags.contexto||[]).join(', ');
+        linea += ' | suplementos: ' + (tags.suplementos||[]).join(', ');
+        if (c.nota) linea += ' | nota: ' + c.nota;
+      }
+      lineas.push(linea);
+    });
+    lineas.push('');
+  });
+  var registrosTexto = lineas.join('\n');
+
+  // System prompts según modo
+  var systemRapido = 'Eres un analista nutricional personal de Fernando. Recibirás un resumen de sus registros de comidas. Responde con un análisis conversacional, directo y útil en 3-5 párrafos cortos. Menciona patrones positivos, alertas concretas y 1-2 sugerencias accionables. No uses listas largas. Tono cercano, como un nutriólogo que lo conoce bien.';
+
+  var systemProfundo = 'Eres un analista nutricional personal de Fernando. Recibirás un resumen de sus registros de comidas. Responde ÚNICAMENTE con un objeto JSON válido, sin texto antes ni después, sin markdown, sin comillas extras. El JSON debe tener exactamente esta estructura:\n{\n  "analisis": "texto del análisis en 3-4 párrafos",\n  "alertas": [\n    { "tipo": "warn", "icono": "⚠️", "titulo": "Título corto", "detalle": "Detalle explicativo" }\n  ],\n  "consejos": [\n    { "emoji": "🥬", "texto": "Consejo accionable y específico" }\n  ]\n}\nTipos de alerta válidos: warn, good, info. Genera entre 3-6 alertas y 3-5 consejos basados en patrones reales de los datos. Sé específico con los alimentos que aparecen en el registro.';
+
+  var esRapido = (modo === 'rapido');
+  var systemPrompt = esRapido ? systemRapido : systemProfundo;
+  var maxTok = esRapido ? 800 : 2000;
+  var modelo = esRapido ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6';
+
+  // UI — loading
+  var outputEl = document.getElementById('analisis-ia-output');
+  var btnRapido   = document.getElementById('btn-analisis-rapido');
+  var btnProfundo = document.getElementById('btn-analisis-profundo');
+  outputEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:.5rem 0;"><div class="spinner"></div>' + (esRapido ? 'Analizando con Haiku…' : 'Analizando con Sonnet, puede tardar unos segundos…') + '</div>';
+  if (btnRapido)   btnRapido.disabled   = true;
+  if (btnProfundo) btnProfundo.disabled = true;
+
+  try {
+    var r = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:      modelo,
+        max_tokens: maxTok,
+        system:     systemPrompt,
+        messages:   [{ role: 'user', content: registrosTexto }]
+      })
+    });
+    var data = await r.json();
+    var respuesta = (data.text || '').trim();
+
+    if (esRapido) {
+      // Mostrar texto directo
+      outputEl.innerHTML = '<div style="font-size:13.5px;line-height:1.75;white-space:pre-wrap;color:var(--text);">' + respuesta.replace(/</g,'&lt;') + '</div>';
+    } else {
+      // Parsear JSON y mostrar + guardar en Firebase
+      var json;
+      try {
+        json = JSON.parse(respuesta);
+      } catch(e) {
+        // Intentar extraer JSON si viene con texto extra
+        var match = respuesta.match(/\{[\s\S]*\}/);
+        json = match ? JSON.parse(match[0]) : null;
+      }
+      if (!json) {
+        outputEl.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al parsear la respuesta. Respuesta recibida:<br><pre style="font-size:11px;margin-top:8px;white-space:pre-wrap;">' + respuesta.replace(/</g,'&lt;').slice(0,500) + '</pre></p>';
+      } else {
+        // Mostrar análisis
+        var html = '<div style="font-size:13.5px;line-height:1.75;white-space:pre-wrap;color:var(--text);margin-bottom:1.25rem;">' + (json.analisis||'').replace(/</g,'&lt;') + '</div>';
+
+        // Botón guardar en Firebase
+        html += '<button id="btn-guardar-analisis" onclick="guardarAnalisisEnFirebase()" style="width:100%;padding:.75rem;border-radius:12px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:var(--green);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-bottom:1rem;">💾 Guardar alertas y consejos en Firebase</button>';
+
+        // Preview alertas
+        if (json.alertas && json.alertas.length) {
+          html += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem;">Alertas nuevas (' + json.alertas.length + ')</div>';
+          json.alertas.forEach(function(a) {
+            html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;margin-bottom:.4rem;display:flex;gap:10px;align-items:flex-start;"><span style="font-size:1.1rem;">' + (a.icono||'⚠️') + '</span><div><div style="font-size:13px;font-weight:600;color:#fff;">' + (a.titulo||'') + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">' + (a.detalle||'') + '</div></div></div>';
+          });
+        }
+
+        // Preview consejos
+        if (json.consejos && json.consejos.length) {
+          html += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:.85rem 0 .5rem;">Consejos nuevos (' + json.consejos.length + ')</div>';
+          json.consejos.forEach(function(c) {
+            html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;margin-bottom:.4rem;display:flex;gap:10px;align-items:flex-start;"><span style="font-size:1.1rem;">' + (c.emoji||'💡') + '</span><div style="font-size:13px;color:var(--text);">' + (c.texto||'') + '</div></div>';
+          });
+        }
+
+        outputEl.innerHTML = html;
+        // Guardar JSON en variable global para usarlo al guardar
+        window._analisisPendiente = json;
+      }
+    }
+  } catch(err) {
+    outputEl.innerHTML = '<p style="color:var(--red);font-size:13px;">Error: ' + err.message + '</p>';
+  } finally {
+    if (btnRapido)   btnRapido.disabled   = false;
+    if (btnProfundo) btnProfundo.disabled = false;
+  }
+}
+
+async function guardarAnalisisEnFirebase() {
+  var json = window._analisisPendiente;
+  if (!json) return;
+  var btn = document.getElementById('btn-guardar-analisis');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try {
+    var alertasDict  = {};
+    var consejosDict = {};
+    (json.alertas  || []).forEach(function(a, i) { alertasDict['alerta_'  + i] = a; });
+    (json.consejos || []).forEach(function(c, i) { consejosDict['consejo_' + i] = c; });
+    await Promise.all([
+      window._fbSet('alertas',  alertasDict),
+      window._fbSet('consejos', consejosDict)
+    ]);
+    // Recargar DATA local
+    DATA.alertas  = json.alertas  || [];
+    DATA.consejos = json.consejos || [];
+    if (btn) { btn.style.background = 'rgba(74,222,128,.25)'; btn.textContent = '✅ Guardado — Alertas y Consejos actualizados'; }
+    window._analisisPendiente = null;
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚠️ Error al guardar: ' + e.message; }
+  }
+}
 async function cargarRegistros() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
@@ -650,7 +806,12 @@ function renderAnalisis() {
       '</div>' +
     '</div>' +
 
-    '<button onclick="prepararAnalisis()" style="width:100%;padding:.8rem;border-radius:12px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:var(--green);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-bottom:.85rem;">🔍 Generar texto para análisis</button>' +
+    '<button onclick="prepararAnalisis()" style="width:100%;padding:.8rem;border-radius:12px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:var(--green);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-bottom:.5rem;">🔍 Generar texto para análisis</button>' +
+    '<div style="display:flex;gap:.5rem;margin-bottom:.85rem;">' +
+      '<button id="btn-analisis-rapido" onclick="ejecutarAnalisisIA(\'rapido\')" style="flex:1;padding:.75rem;border-radius:12px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.35);color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">⚡ Análisis rápido</button>' +
+      '<button id="btn-analisis-profundo" onclick="ejecutarAnalisisIA(\'profundo\')" style="flex:1;padding:.75rem;border-radius:12px;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.35);color:var(--purple);font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">🔬 Análisis profundo</button>' +
+    '</div>' +
+    '<div id="analisis-ia-output" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;margin-bottom:.85rem;min-height:60px;"></div>' +
 
     '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;margin-bottom:.85rem;">' +
       '<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;">Resultado</div>' +
