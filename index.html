@@ -548,7 +548,7 @@ async function ejecutarAnalisisIA(modo) {
   if (btnProfundo) btnProfundo.disabled = true;
 
   try {
-    var r = await fetch(PROXY_URL + '?analisis2=' + encodeURIComponent(periodo + '|' + nivel + '|' + modo), {
+    var r = await fetch(PROXY_URL + '?p=' + periodo + '&n=' + nivel + '&m=' + modo, {
       method: 'GET',
       redirect: 'follow'
     });
