@@ -542,6 +542,7 @@ async function ejecutarAnalisisIA(modo) {
   var outputEl = document.getElementById('analisis-ia-output');
   var btnRapido   = document.getElementById('btn-analisis-rapido');
   var btnProfundo = document.getElementById('btn-analisis-profundo');
+  var esRapido = (modo === 'rapido');
   outputEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:.5rem 0;"><div class="spinner"></div>' + (esRapido ? 'Analizando con Haiku…' : 'Analizando con Sonnet, puede tardar unos segundos…') + '</div>';
   if (btnRapido)   btnRapido.disabled   = true;
   if (btnProfundo) btnProfundo.disabled = true;
