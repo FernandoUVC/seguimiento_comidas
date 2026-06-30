@@ -343,7 +343,10 @@ async function submitGForm() {
     var partes  = fecha.split('-');
     var anio    = partes[0];
     var mes     = partes[1];
-    var comidaId = (cols[4] || '').trim().replace(/[.#$/\[\]]/g,'_') || diaId + '_cx';
+    var existentes = await window._fbGet('registros/' + anio + '/' + mes + '/' + diaId + '/comidas') || {};
+    var contador = Object.keys(existentes).length + 1;
+    var comidaId = diaId + '_c' + contador;
+    while (existentes[comidaId]) { contador++; comidaId = diaId + '_c' + contador; }
     function splitPipe(s){ return s ? s.split('|').map(function(x){return x.trim();}).filter(Boolean) : []; }
     var comida = {
       titulo:    (cols[5]||'').trim(),
@@ -1254,7 +1257,10 @@ async function rvEnviar() {
     var partes   = fecha.split('-');
     var anio     = partes[0];
     var mes      = partes[1];
-    var comidaId = (cols[4] || '').trim().replace(/[.#$/\[\]]/g,'_') || diaId + '_cx';
+    var existentes = await window._fbGet('registros/' + anio + '/' + mes + '/' + diaId + '/comidas') || {};
+    var contador = Object.keys(existentes).length + 1;
+    var comidaId = diaId + '_c' + contador;
+    while (existentes[comidaId]) { contador++; comidaId = diaId + '_c' + contador; }
     function splitPipe(s){ return s ? s.split('|').map(function(x){return x.trim();}).filter(Boolean) : []; }
     var comida = {
       titulo:    (cols[5]||'').trim(),
