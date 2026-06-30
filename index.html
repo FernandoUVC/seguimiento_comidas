@@ -329,6 +329,25 @@ function showFormStatus(type, msg) {
   }
 }
 
+function horaA24(h) {
+  // Convierte cualquier formato a HH:MM para ordenar correctamente
+  if (!h) return '99:99';
+  h = h.trim().toLowerCase();
+  // Ya en 24hrs: "13:15", "7:20"
+  var h24 = h.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (h24) return h24[1].padStart(2,'0') + ':' + h24[2];
+  // Con am/pm
+  var hm = h.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?m\.?|p\.?m\.?)$/);
+  if (hm) {
+    var hr = parseInt(hm[1]), mn = hm[2];
+    var espm = hm[3].replace(/\./g,'') === 'pm';
+    if (espm && hr !== 12) hr += 12;
+    if (!espm && hr === 12) hr = 0;
+    return String(hr).padStart(2,'0') + ':' + mn;
+  }
+  return '99:99';
+}
+  
 function normalizarHora(h) {
   if (!h) return '';
   h = h.trim().toLowerCase();
@@ -679,7 +698,7 @@ async function cargarRegistros() {
         var comidasArr = d.comidas
           ? Object.entries(d.comidas).map(function(entry) {
               return Object.assign({}, entry[1], { _comidaId: entry[0], _diaId: d.meta.dia_id });
-            }).sort(function(a,b){ return (a.hora||'').localeCompare(b.hora||''); })
+            }).sort(function(a,b){ return horaA24(a.hora||'').localeCompare(horaA24(b.hora||'')); })
           : [];
         return {
           id:         d.meta.dia_id,
