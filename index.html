@@ -177,9 +177,12 @@ body{padding-bottom:70px;}
 </div>
   
 <nav class="secondary-nav">
-  <div class="nav-divider"></div>
+  <button class="sec-pill" onclick="irAHoy()">📅 Hoy</button>
+  <button class="sec-pill" onclick="toggleRacha()">🔥 Racha</button>
+  <button class="sec-pill" onclick="toggleBuscar()">🔍 Buscar</button>
+  <button class="sec-pill" onclick="toggleFiltrar()">🎯 Filtrar</button>
 </nav>
-  
+<div id="nav-panel" style="display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;"></div>  
 <div class="cal-wrap" id="cal-wrap">
   <div class="cal-header"><button class="cal-arrow" id="cal-prev" onclick="calNavMes(-1)">&#x2039;</button><span class="cal-mes" id="cal-mes-label"></span><button class="cal-arrow" id="cal-next" onclick="calNavMes(1)">&#x203A;</button></div>
   <div class="cal-grid" id="cal-grid"></div>
@@ -902,6 +905,210 @@ function generarCAL_MESES() {
 var CAL_MESES = generarCAL_MESES();
 var calMesIdx = CAL_MESES.length - 1;
 var CAL_META = CAL_MESES[CAL_MESES.length - 1];
+
+// ── HOY ──────────────────────────────────────────────────────
+function irAHoy() {
+  // Volver al mes actual
+  calMesIdx = CAL_MESES.length - 1;
+  CAL_META = Object.assign({}, CAL_MESES[calMesIdx]);
+  // Seleccionar el día de hoy si existe en DATA
+  var hoy = new Date();
+  var anio = String(hoy.getFullYear());
+  var mes  = String(hoy.getMonth() + 1).padStart(2,'0');
+  var dia  = String(hoy.getDate()).padStart(2,'0');
+  var fechaHoy = anio + '-' + mes + '-' + dia;
+  var diaHoy = DATA.dias.find(function(d){ return d.fecha === fechaHoy; });
+  if (diaHoy) {
+    appState.diaId = diaHoy.id;
+    appState.view = 'dia';
+  }
+  cerrarNavPanel();
+  updateView();
+}
+
+// ── RACHA ─────────────────────────────────────────────────────
+function toggleRacha() {
+  var panel = document.getElementById('nav-panel');
+  if (panel.dataset.modo === 'racha' && panel.style.display !== 'none') {
+    cerrarNavPanel(); return;
+  }
+  panel.dataset.modo = 'racha';
+  panel.style.display = 'block';
+
+  // Calcular racha actual
+  var hoy = new Date();
+  var rachaActual = 0;
+  var cursor = new Date(hoy);
+  while (true) {
+    var f = cursor.toISOString().split('T')[0];
+    var existe = DATA.dias.some(function(d){ return d.fecha === f; });
+    if (!existe) break;
+    rachaActual++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  // Calcular racha máxima histórica
+  var fechas = DATA.dias.map(function(d){ return d.fecha; }).sort();
+  var maxRacha = 0, rachaTemp = 1;
+  for (var i = 1; i < fechas.length; i++) {
+    var prev = new Date(fechas[i-1] + 'T12:00:00');
+    var curr = new Date(fechas[i]   + 'T12:00:00');
+    var diff = (curr - prev) / (1000 * 60 * 60 * 24);
+    if (diff === 1) { rachaTemp++; }
+    else { maxRacha = Math.max(maxRacha, rachaTemp); rachaTemp = 1; }
+  }
+  maxRacha = Math.max(maxRacha, rachaTemp);
+
+  // Días registrados este mes
+  var mesActual = String(hoy.getMonth() + 1).padStart(2,'0');
+  var anioActual = String(hoy.getFullYear());
+  var diasEsteMes = DATA.dias.filter(function(d){
+    return d.fecha.startsWith(anioActual + '-' + mesActual);
+  }).length;
+  var totalDiasMes = hoy.getDate(); // días transcurridos del mes
+
+  panel.innerHTML =
+    '<div style="display:flex;gap:1rem;justify-content:space-around;">' +
+      '<div style="text-align:center;">' +
+        '<div style="font-size:1.8rem;">' + (rachaActual >= 3 ? '🔥' : rachaActual >= 1 ? '✅' : '😴') + '</div>' +
+        '<div style="font-size:1.4rem;font-weight:700;color:var(--text);">' + rachaActual + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">Racha actual</div>' +
+      '</div>' +
+      '<div style="text-align:center;">' +
+        '<div style="font-size:1.8rem;">🏆</div>' +
+        '<div style="font-size:1.4rem;font-weight:700;color:var(--text);">' + maxRacha + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">Racha máxima</div>' +
+      '</div>' +
+      '<div style="text-align:center;">' +
+        '<div style="font-size:1.8rem;">📅</div>' +
+        '<div style="font-size:1.4rem;font-weight:700;color:var(--text);">' + diasEsteMes + '<span style="font-size:.9rem;color:var(--muted);">/' + totalDiasMes + '</span></div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">Días este mes</div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ── BUSCAR ────────────────────────────────────────────────────
+function toggleBuscar() {
+  var panel = document.getElementById('nav-panel');
+  if (panel.dataset.modo === 'buscar' && panel.style.display !== 'none') {
+    cerrarNavPanel(); return;
+  }
+  panel.dataset.modo = 'buscar';
+  panel.style.display = 'block';
+  panel.innerHTML =
+    '<div style="display:flex;gap:.5rem;margin-bottom:.6rem;">' +
+      '<input id="buscar-input" placeholder="Alimento o tag…" oninput="ejecutarBusqueda()" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:\'DM Sans\',sans-serif;font-size:13px;padding:.5rem .75rem;outline:none;">' +
+      '<button onclick="cerrarNavPanel()" style="padding:.5rem .75rem;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;">✕</button>' +
+    '</div>' +
+    '<div id="buscar-resultados" style="font-size:12.5px;color:var(--muted);">Escribe para buscar…</div>';
+  setTimeout(function(){ var el = document.getElementById('buscar-input'); if(el) el.focus(); }, 100);
+}
+
+function ejecutarBusqueda() {
+  var q = (document.getElementById('buscar-input').value || '').trim().toLowerCase();
+  var res = document.getElementById('buscar-resultados');
+  if (!q || q.length < 2) { res.innerHTML = '<span style="color:var(--muted);">Escribe al menos 2 caracteres…</span>'; return; }
+  var resultados = [];
+  DATA.dias.forEach(function(dia) {
+    dia.comidas.forEach(function(c) {
+      var enAlimentos = (c.alimentos||[]).some(function(a){ return a.toLowerCase().includes(q); });
+      var tags = c.tags || {};
+      var enTags = ['cubierto','atencion','contexto','suplementos'].some(function(g){
+        return (tags[g]||[]).some(function(t){ return t.toLowerCase().includes(q); });
+      });
+      var enTitulo = (c.titulo||'').toLowerCase().includes(q);
+      if (enAlimentos || enTags || enTitulo) {
+        if (!resultados.find(function(r){ return r.id === dia.id; })) {
+          resultados.push({ id: dia.id, etiqueta: dia.etiqueta, fecha: dia.fecha });
+        }
+      }
+    });
+  });
+  if (resultados.length === 0) {
+    res.innerHTML = '<span style="color:var(--muted);">Sin coincidencias para "' + q + '"</span>';
+    return;
+  }
+  res.innerHTML = resultados.map(function(r){
+    return '<button onclick="selectDia(\''+r.id+'\');cerrarNavPanel();" style="display:inline-block;margin:.2rem .3rem .2rem 0;padding:3px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;cursor:pointer;">'+r.etiqueta+'</button>';
+  }).join('');
+}
+
+// ── FILTRAR ───────────────────────────────────────────────────
+function toggleFiltrar() {
+  var panel = document.getElementById('nav-panel');
+  if (panel.dataset.modo === 'filtrar' && panel.style.display !== 'none') {
+    cerrarNavPanel(); limpiarFiltroCalendario(); return;
+  }
+  panel.dataset.modo = 'filtrar';
+  panel.style.display = 'block';
+
+  var grupos = [
+    { label: 'Atención',    tags: ['sodio_alto','sodio_moderado','grasas_saturadas','azucar_alta','ultraprocesados','fritos','alcohol','sin_vegetales'] },
+    { label: 'Contexto',    tags: ['comida_fuera','comida_rapida','bowl_nocturno','en_ayunas','compartido','comida_elaborada'] },
+    { label: 'Suplementos', tags: ['doublex_media','doublex_completa','omega3_capsula','menjurje','d3k2_capsula'] },
+  ];
+
+  var html = '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Filtrar calendario por tag</div>';
+  grupos.forEach(function(g){
+    html += '<div style="margin-bottom:.4rem;"><span style="font-size:11px;color:var(--muted);margin-right:.4rem;">'+g.label+':</span>';
+    g.tags.forEach(function(t){
+      html += '<button onclick="aplicarFiltroCalendario(\''+t+'\')" id="filtro-btn-'+t+'" style="margin:.15rem .2rem;padding:2px 9px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11.5px;cursor:pointer;">'+t.replace(/_/g,' ')+'</button>';
+    });
+    html += '</div>';
+  });
+  html += '<button onclick="limpiarFiltroCalendario()" style="margin-top:.4rem;padding:3px 10px;border-radius:8px;background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;cursor:pointer;">✕ Limpiar filtro</button>';
+  panel.innerHTML = html;
+}
+
+function aplicarFiltroCalendario(tag) {
+  // Resaltar botón activo
+  document.querySelectorAll('[id^="filtro-btn-"]').forEach(function(b){ b.style.background = 'var(--surface2)'; b.style.color = 'var(--text)'; });
+  var btn = document.getElementById('filtro-btn-' + tag);
+  if (btn) { btn.style.background = 'rgba(74,222,128,.2)'; btn.style.color = 'var(--green)'; }
+
+  // Marcar días en el calendario
+  var diasConTag = {};
+  DATA.dias.forEach(function(dia){
+    var tiene = dia.comidas.some(function(c){
+      var tags = c.tags || {};
+      return ['cubierto','atencion','contexto','suplementos'].some(function(g){
+        return (tags[g]||[]).includes(tag);
+      });
+    });
+    if (tiene) {
+      var diaNum = parseInt(dia.fecha.split('-')[2], 10);
+      diasConTag[diaNum] = true;
+    }
+  });
+
+  // Re-renderizar calendario con resaltado
+  var diasConData = buildDiasConData();
+  var grid = document.getElementById('cal-grid');
+  var dayNames = ["L","M","X","J","V","S","D"];
+  var html = dayNames.map(function(d){ return '<div class="cal-dayname">'+d+'</div>'; }).join('');
+  for (var i = 0; i < CAL_META.primerOffset; i++) html += '<div class="cal-day"></div>';
+  for (var d = 1; d <= CAL_META.totalDias; d++) {
+    var diaId = diasConData[d];
+    var isSelected = diaId && appState.diaId === diaId;
+    var tieneTag = diasConTag[d];
+    var cls = 'cal-day' + (diaId ? ' has-data' : '') + (isSelected ? ' selected' : '');
+    var extraStyle = diaId && !tieneTag ? 'opacity:.3;' : diaId && tieneTag ? 'box-shadow:0 0 0 2px var(--green);' : '';
+    var click = diaId ? ' onclick="selectDia(\''+diaId+'\')"' : '';
+    html += '<div class="'+cls+'"'+click+' style="'+extraStyle+'">'+d+'</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function limpiarFiltroCalendario() {
+  renderCalendar();
+}
+
+function cerrarNavPanel() {
+  var panel = document.getElementById('nav-panel');
+  panel.style.display = 'none';
+  panel.dataset.modo = '';
+  limpiarFiltroCalendario();
+}
   
 function calNavMes(dir) {
   var newIdx = calMesIdx + dir;
