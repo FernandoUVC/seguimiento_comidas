@@ -731,18 +731,15 @@ async function cargarRegistros() {
     var roomInicial = document.getElementById('room-dia');
     if (roomInicial) roomInicial.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
   }
-  try {    var hoy = new Date();
-    var anio = String(hoy.getFullYear());
-    var mes  = String(hoy.getMonth() + 1).padStart(2, '0');
-    // Carga el mes actual y el anterior para tener contexto de semana completa
-    var mesAnteriorNum = hoy.getMonth(); // 0-based = mes anterior
-    var anioAnterior  = mesAnteriorNum === 0 ? String(hoy.getFullYear() - 1) : anio;
-    var mesAnterior   = mesAnteriorNum === 0 ? '12' : String(mesAnteriorNum).padStart(2, '0');
-    var [dataMesActual, dataMesAnterior] = await Promise.all([
-      window._fbGetMes(anio, mes),
-      window._fbGetMes(anioAnterior, mesAnterior)
-    ]);
-    var diasMap = Object.assign({}, dataMesAnterior || {}, dataMesActual || {});
+  try {    
+    // Carga todos los meses que el calendario permite navegar (desde abril 2026 hasta el mes actual)
+    var resultadosMeses = await Promise.all(
+      CAL_MESES.map(function(m){
+        return window._fbGetMes(String(m.anio), String(m.mesNum).padStart(2, '0'));
+      })
+    );
+    var diasMap = {};
+    resultadosMeses.forEach(function(d){ Object.assign(diasMap, d || {}); });
     if (!diasMap || Object.keys(diasMap).length === 0) throw new Error('Sin registros en Firebase');
     DATA.dias = Object.values(diasMap)
       .map(function(d) {
