@@ -988,6 +988,7 @@ function irAHoy() {
   if (diaHoy) {
     appState.diaId = diaHoy.id;
     appState.view = 'dia';
+    invalidarVista('dia');
   }
   updateView();
 }
@@ -1294,9 +1295,12 @@ function invalidarVista(clave) {
 }
 
 function selectDia(id) {
-  appState.view = "dia"; appState.diaId = id; updateView();
+  appState.view = "dia"; appState.diaId = id;
+  invalidarVista('dia'); // se seleccionó un día distinto: reconstruir el cuarto con el nuevo día
+  updateView();
   setTimeout(function(){ var app = document.getElementById("app"); if (app) app.scrollIntoView({behavior:"smooth",block:"start"}); }, 50);
 }
+
 function setView(v) {
   appState.view = v;
   updateView();
