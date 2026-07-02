@@ -175,6 +175,8 @@ body{padding-bottom:70px;}
   <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:600;color:#fff;margin-bottom:.25rem;">Registro Nutricional</h1>
   <div id="hero-fecha" style="font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;"></div>
 </div>
+
+<div id="debug-panel" style="display:none;position:fixed;bottom:70px;left:10px;right:10px;background:#1a1a2e;border:1px solid #f87171;border-radius:10px;padding:.75rem;font-size:11px;color:#f87171;font-family:monospace;z-index:9999;max-height:200px;overflow-y:auto;"></div>
   
 <nav class="secondary-nav">
   <button class="sec-pill" onclick="irAHoy()">📅 Hoy</button>
@@ -873,6 +875,15 @@ function renderContexto() {
 function render() {
   // hero simplificado — fecha dinámica
 }
+
+window.onerror = function(msg, src, line) {
+  var p = document.getElementById('debug-panel');
+  if (p) { p.style.display = 'block'; p.innerHTML += '<div>❌ ' + msg + ' (línea ' + line + ')</div>'; }
+};
+window._log = function(msg) {
+  var p = document.getElementById('debug-panel');
+  if (p) { p.style.display = 'block'; p.innerHTML += '<div>→ ' + msg + '</div>'; }
+};
 
 var appState = { view: "dia", diaId: null };
 function generarCAL_MESES() {
