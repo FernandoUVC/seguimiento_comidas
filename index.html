@@ -191,7 +191,15 @@ body{padding-bottom:70px;}
   <div class="cal-grid" id="cal-grid"></div>
 </div>
 
-<main id="app"></main>
+<main id="app">
+  <div class="room" id="room-dia"></div>
+  <div class="room" id="room-resumen" hidden></div>
+  <div class="room" id="room-contexto" hidden></div>
+  <div class="room" id="room-alertas" hidden></div>
+  <div class="room" id="room-consejos" hidden></div>
+  <div class="room" id="room-registro" hidden></div>
+  <div class="room" id="room-analisis" hidden></div>
+</main>
 
 <footer>
   <p>Registro Nutricional &middot; Proyecto Resourcefulness &middot; · Google Sheets</p>
@@ -1193,33 +1201,58 @@ function updateSecNav() {
   });
 }
 
-function updateView() {
-  updateSecNav();
-  renderCalendar();
-  var app = document.getElementById("app");
-  if (appState.view === "dia") {
+// ── Mapa de cuartos: vista → { room, render, construido } ──
+var ROOMS = {
+  dia:      { room: "room-dia",      construido: false, render: function(el){ construirDia(el); } },
+  resumen:  { room: "room-resumen",  construido: false, render: function(el){ el.innerHTML = renderResumen() + renderAlertas() + renderConsejos(); } },
+  contexto: { room: "room-contexto", construido: false, render: function(el){ el.innerHTML = renderContexto(); } },
+  alertas:  { room: "room-alertas",  construido: false, render: function(el){ el.innerHTML = renderAlertas(); } },
+  consejos: { room: "room-consejos", construido: false, render: function(el){ el.innerHTML = renderConsejos(); } },
+  registro: { room: "room-registro", construido: false, render: function(el){ el.innerHTML = renderRegistro(); } },
+  analisis: { room: "room-analisis", construido: false, render: function(el){ el.innerHTML = renderAnalisis(); } }
+};
+
+// Construye el contenido de la vista Día en su cuarto (respeta día seleccionado)
+function construirDia(el) {
   if (!appState.diaId && DATA.dias.length > 0) {
     appState.diaId = DATA.dias[DATA.dias.length - 1].id;
   }
   if (!appState.diaId) {
-    app.innerHTML = '<div class="empty-state"><span>📅</span>Selecciona un día en el calendario</div>';
+    el.innerHTML = '<div class="empty-state"><span>📅</span>Selecciona un día en el calendario</div>';
     return;
   }
   var dia = DATA.dias.find(function(d){ return d.id === appState.diaId; });
-  app.innerHTML = dia ? renderDia(dia) : '<div class="empty-state"><span>🔍</span>Día no encontrado</div>';
-  } else if (appState.view === "semana" || appState.view === "mes") {
-    app.innerHTML = renderResumen() + renderAlertas() + renderConsejos();
-  } else if (appState.view === "contexto") {
-    app.innerHTML = renderContexto();
-  } else if (appState.view === "alertas") {
-    app.innerHTML = renderAlertas();
-  } else if (appState.view === "consejos") {
-    app.innerHTML = renderConsejos();
-  } else if (appState.view === "registro") {
-    app.innerHTML = renderRegistro();
-  } else if (appState.view === "analisis") {
-    app.innerHTML = renderAnalisis();
+  el.innerHTML = dia ? renderDia(dia) : '<div class="empty-state"><span>🔍</span>Día no encontrado</div>';
+}  
+  
+function updateView() {
+  updateSecNav();
+  renderCalendar();
+
+  // Normaliza vistas viejas ("semana"/"mes") a la nueva clave unificada
+  var vista = appState.view;
+  if (vista === "semana" || vista === "mes") vista = "resumen";
+  if (!ROOMS[vista]) vista = "dia";
+
+  var conf = ROOMS[vista];
+  var el = document.getElementById(conf.room);
+
+  // Construcción diferida: llena el cuarto solo la primera vez
+  if (!conf.construido) {
+    conf.render(el);
+    conf.construido = true;
   }
+
+  // Enciende el cuarto activo, apaga los demás
+  Object.keys(ROOMS).forEach(function(k){
+    var r = document.getElementById(ROOMS[k].room);
+    if (r) r.hidden = (k !== vista);
+  });
+}
+
+// Fuerza reconstrucción de una vista la próxima vez que se muestre (tras cambios de datos)
+function invalidarVista(clave) {
+  if (ROOMS[clave]) ROOMS[clave].construido = false;
 }
 
 function selectDia(id) {
