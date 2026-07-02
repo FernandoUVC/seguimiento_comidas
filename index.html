@@ -433,6 +433,8 @@ async function submitGForm() {
     await cargarRegistros();
     appState.diaId = diaId;
     appState.view = 'dia';
+    invalidarVista('dia');       // el día cambió: forzar reconstrucción del cuarto
+    invalidarVista('resumen');   // el resumen depende de los días
     updateView();
     showFormStatus('ok', '✅ Guardado y visible en la vista Día.');
     document.getElementById('btn-submit').disabled = false;
@@ -1733,7 +1735,7 @@ async function guardarEdicionComida() {
     await window._fbSet('registros/' + anio + '/' + mes + '/' + ctx.diaId + '/comidas/' + ctx.comidaId, comida);
     status.style.cssText = 'display:block;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;background:rgba(74,222,128,.08);color:var(--green);border:1px solid rgba(74,222,128,.25);';
     status.textContent = '✅ Guardado correctamente';
-    setTimeout(function(){ cerrarEditar(); cargarRegistros().then(function(){ updateView(); }); }, 800);
+    setTimeout(function(){ cerrarEditar(); cargarRegistros().then(function(){ invalidarVista('dia'); invalidarVista('resumen'); updateView(); }); }, 800);
   } catch(e) {
     status.style.cssText = 'display:block;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;background:rgba(248,113,113,.08);color:var(--red,#f87171);border:1px solid rgba(248,113,113,.25);';
     status.textContent = '⚠️ Error: ' + e.message;
