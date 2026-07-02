@@ -1580,10 +1580,13 @@ async function rvEnviar() {
   var csv = document.getElementById('rv-csv-final').textContent;
   if (!csv) return;
   var cols = csv.split(',');
-  document.getElementById('rv-send-status').style.display = 'block';
-  document.getElementById('rv-send-status').style.cssText = 'display:block;padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.75rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa33;';
-  document.getElementById('rv-send-status').textContent = 'Guardando en Firebase…';
-  document.getElementById('rv-send-actions').style.display = 'none';
+  }
+    await cargarRegistros();
+    invalidarVista('dia');
+    invalidarVista('resumen');
+    document.getElementById('rv-send-status').style.display = 'none';
+    document.getElementById('rv-send-success').style.display = 'block';
+    document.getElementById('csv-input').value = csv;
   try {
     var fecha    = cols[0].trim();
     var diaId    = cols[1].trim();
