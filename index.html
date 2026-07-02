@@ -179,10 +179,10 @@ body{padding-bottom:70px;}
 <div id="debug-panel" style="display:none;position:fixed;bottom:70px;left:10px;right:10px;background:#1a1a2e;border:1px solid #f87171;border-radius:10px;padding:.75rem;font-size:11px;color:#f87171;font-family:monospace;z-index:9999;max-height:200px;overflow-y:auto;"></div>
   
 <nav class="secondary-nav">
-  <button class="sec-pill" onclick="irAHoy()">📅 Hoy</button>
-  <button class="sec-pill" onclick="toggleRacha()">🔥 Racha</button>
-  <button class="sec-pill" onclick="toggleBuscar()">🔍 Buscar</button>
-  <button class="sec-pill" onclick="toggleFiltrar()">🎯 Filtrar</button>
+  <button class="sec-pill" data-view="dia" onclick="irAHoy()">📅 Hoy</button>
+  <button class="sec-pill" data-panel="racha" onclick="toggleRacha()">🔥 Racha</button>
+  <button class="sec-pill" data-panel="buscar" onclick="toggleBuscar()">🔍 Buscar</button>
+  <button class="sec-pill" data-panel="filtrar" onclick="toggleFiltrar()">🎯 Filtrar</button>
 </nav>
 <div id="nav-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:0 0 12px 12px;padding:.75rem 1.25rem;position:fixed;top:100px;left:0;right:0;z-index:999;margin:0 8px;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div>
   
@@ -419,8 +419,14 @@ async function submitGForm() {
         fecha: fecha, dia_id: diaId, etiqueta: etiqueta, resumen_dia: (cols[3]||'').trim()
       });
     }
-    showFormStatus('ok', '✅ Guardado en Firebase. Recarga la vista Día para verlo.');
+    showFormStatus('sending', 'Guardado. Actualizando vista…');
     document.getElementById('csv-input').value = '';
+    // Recarga automática: vuelve a leer Firebase y refresca la vista sin recargar la página
+    await cargarRegistros();
+    appState.diaId = diaId;
+    appState.view = 'dia';
+    updateView();
+    showFormStatus('ok', '✅ Guardado y visible en la vista Día.');
     document.getElementById('btn-submit').disabled = false;
     document.getElementById('btn-submit').textContent = '↑ Enviar';
   } catch(e) {
@@ -828,7 +834,10 @@ function renderComida(c) {
     supIndicators = c.tags.suplementos.map(function(s){ var m=supMap[s]||{label:s,color:"#6b7280"}; return '<span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.04em;background:'+m.color+'22;border:1px solid '+m.color+'55;color:'+m.color+';margin-left:6px;flex-shrink:0;">'+m.label+'</span>'; }).join("");
   }
   var editBtn = '<div style="display:flex;justify-content:flex-end;padding-top:.5rem;margin-top:.25rem;border-top:1px solid var(--border);"><button onclick="abrirEditarComida(\''+c._diaId+'\',\''+c._comidaId+'\')" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;padding:4px 10px;border-radius:6px;font-family:\'DM Sans\',sans-serif;">✏️ Editar</button></div>';
-  return '<div class="meal-card"><div class="meal-header" onclick="toggle(this)"><div class="meal-header-left"><div class="meal-icon">'+c.icono+'</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><div class="meal-title">'+c.titulo+'</div>'+supIndicators+'</div>'+'<div class="meal-time">'+formatHora(c.hora)+'</div></div><div class="meal-chevron">&#x25BC;</div></div><div class="meal-body">'+(alimentos?'<div class="food-list">'+alimentos+'</div>':'')+nota+secciones+editBtn+'</div></div>';
+  var estaAbierta = c._comidaId && appState.comidasAbiertas[c._comidaId];
+  var openClass = estaAbierta ? ' open' : '';
+  var cidAttr = c._comidaId ? ' data-comida-id="'+c._comidaId+'"' : '';
+  return '<div class="meal-card'+openClass+'"'+cidAttr+'><div class="meal-header" onclick="toggle(this)"><div class="meal-header-left"><div class="meal-icon">'+c.icono+'</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><div class="meal-title">'+c.titulo+'</div>'+supIndicators+'</div>'+'<div class="meal-time">'+formatHora(c.hora)+'</div></div><div class="meal-chevron">&#x25BC;</div></div><div class="meal-body">'+(alimentos?'<div class="food-list">'+alimentos+'</div>':'')+nota+secciones+editBtn+'</div></div>';
 }
 function renderDia(dia) {
   var comidas = dia.comidas.map(renderComida).join("");
@@ -886,7 +895,7 @@ window._log = function(msg) {
   if (p) { p.style.display = 'block'; p.innerHTML += '<div>→ ' + msg + '</div>'; }
 };
 
-var appState = { view: "dia", diaId: null };
+var appState = { view: "dia", diaId: null, comidasAbiertas: {} };
 function generarCAL_MESES() {
   var hoy = new Date();
   var meses = [];
@@ -945,6 +954,7 @@ function toggleRacha() {
   }
   panel.dataset.modo = 'racha';
   panel.style.display = 'block';
+  updateSecNav();
 
   // Calcular racha actual
   var hoy = new Date();
@@ -1006,6 +1016,7 @@ function toggleBuscar() {
   }
   panel.dataset.modo = 'buscar';
   panel.style.display = 'block';
+  updateSecNav();
   panel.innerHTML =
     '<div style="display:flex;gap:.5rem;margin-bottom:.6rem;">' +
       '<input id="buscar-input" placeholder="Alimento o tag…" oninput="ejecutarBusqueda()" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:\'DM Sans\',sans-serif;font-size:13px;padding:.5rem .75rem;outline:none;">' +
@@ -1052,6 +1063,7 @@ function toggleFiltrar() {
   }
   panel.dataset.modo = 'filtrar';
   panel.style.display = 'block';
+  updateSecNav();
 
   var grupos = [
     { label: 'Atención',    tags: ['sodio_alto','sodio_moderado','grasas_saturadas','azucar_alta','ultraprocesados','fritos','alcohol','sin_vegetales'] },
@@ -1119,6 +1131,7 @@ function cerrarNavPanel() {
   panel.style.display = 'none';
   panel.dataset.modo = '';
   limpiarFiltroCalendario();
+  updateSecNav();
 }
   
 function calNavMes(dir) {
@@ -1166,8 +1179,18 @@ function renderCalendar() {
 }
 
 function updateSecNav() {
-  var pills = document.querySelectorAll(".sec-pill");
-  pills.forEach(function(p){ p.classList.toggle("active", p.dataset.view === appState.view); });
+  var panelActivo = '';
+  var panel = document.getElementById('nav-panel');
+  if (panel && panel.style.display !== 'none') panelActivo = panel.dataset.modo || '';
+  document.querySelectorAll('.sec-pill').forEach(function(p){
+    if (p.dataset.view) {
+      // Pill de vista (Hoy): activo solo si no hay panel abierto y la vista coincide
+      p.classList.toggle('active', !panelActivo && p.dataset.view === appState.view);
+    } else if (p.dataset.panel) {
+      // Pill de panel (Racha/Buscar/Filtrar): activo si su panel está abierto
+      p.classList.toggle('active', p.dataset.panel === panelActivo);
+    }
+  });
 }
 
 function updateView() {
@@ -1225,13 +1248,21 @@ function exportCSV() {
   document.body.appendChild(el); el.click(); document.body.removeChild(el); URL.revokeObjectURL(url);
 }
 
-function toggle(h) { h.parentElement.classList.toggle("open"); }
+function toggle(h) {
+  var card = h.parentElement;
+  card.classList.toggle("open");
+  // Recordar el estado abierto/cerrado para conservarlo entre re-renderizados
+  var cid = card.dataset.comidaId;
+  if (cid) {
+    if (card.classList.contains("open")) appState.comidasAbiertas[cid] = true;
+    else delete appState.comidasAbiertas[cid];
+  }
+}
 
 window.onload = async function() {
   renderHero();
   render();
-  var pills = document.querySelectorAll(".sec-pill");
-  pills.forEach(function(p){ p.onclick = function(){ setView(p.dataset.view); }; });
+  // Los onclick de los pills ya están definidos en el HTML; no los sobreescribimos.
 
   const [ok] = await Promise.all([
     cargarRegistros(),
