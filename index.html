@@ -688,6 +688,9 @@ async function guardarAnalisisEnFirebase() {
     // Recargar DATA local
     DATA.alertas  = json.alertas  || [];
     DATA.consejos = json.consejos || [];
+    invalidarVista('alertas');
+    invalidarVista('consejos');
+    invalidarVista('resumen');
     if (btn) { btn.style.background = 'rgba(74,222,128,.25)'; btn.textContent = '✅ Guardado — Alertas y Consejos actualizados'; }
     window._analisisPendiente = null;
   } catch(e) {
@@ -695,10 +698,14 @@ async function guardarAnalisisEnFirebase() {
   }
 }
 async function cargarRegistros() {
-  var app = document.getElementById('app');
-  app.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
-  try {
-    var hoy = new Date();
+  // Solo mostrar el spinner en la primera carga; en recargas posteriores
+  // los cuartos ya existen y no deben destruirse (arquitectura de vistas persistentes)
+  var primerCarga = !DATA.dias || DATA.dias.length === 0;
+  if (primerCarga) {
+    var roomInicial = document.getElementById('room-dia');
+    if (roomInicial) roomInicial.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.6">⏳</span><div style="color:var(--muted);font-size:13px">Cargando registros...</div></div>';
+  }
+  try {    var hoy = new Date();
     var anio = String(hoy.getFullYear());
     var mes  = String(hoy.getMonth() + 1).padStart(2, '0');
     // Carga el mes actual y el anterior para tener contexto de semana completa
@@ -730,7 +737,10 @@ async function cargarRegistros() {
     return true;
   } catch(e) {
     console.error('[Firebase] cargarRegistros error:', e);
-    document.getElementById('app').innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4">⚠️</span><div style="color:var(--muted);font-size:13px">No se pudieron cargar los registros.<br><small>' + e.message + '</small></div></div>';
+    if (!DATA.dias || DATA.dias.length === 0) {
+      var roomError = document.getElementById('room-dia');
+      if (roomError) roomError.innerHTML = '<div class="empty-state" style="padding:3rem 1.25rem"><span style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.4">⚠️</span><div style="color:var(--muted);font-size:13px">No se pudieron cargar los registros.<br><small>' + e.message + '</small></div></div>';
+    }
     return false;
   }
 }
@@ -1754,7 +1764,7 @@ async function eliminarComida() {
     var mes  = fechaCompleta.split('-')[1];
     await window._fbSet('registros/' + anio + '/' + mes + '/' + ctx.diaId + '/comidas/' + ctx.comidaId, null);
     cerrarEditar();
-    cargarRegistros().then(function(){ updateView(); });
+    cargarRegistros().then(function(){ invalidarVista('dia'); invalidarVista('resumen'); updateView(); });
   } catch(e) {
     alert('Error al eliminar: ' + e.message);
   }
