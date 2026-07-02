@@ -625,16 +625,42 @@ async function ejecutarAnalisisIA(modo) {
       outputEl.innerHTML = '<div style="font-size:13.5px;line-height:1.75;white-space:pre-wrap;color:var(--text);">' + respuesta.replace(/</g,'&lt;') + '</div>';
     } else {
       // Parsear JSON y mostrar + guardar en Firebase
-      var json;
+      console.log('[Análisis IA] Respuesta cruda de Sonnet:', respuesta);
+      var json = null;
+      var errorParseo = null;
       try {
         json = JSON.parse(respuesta);
-      } catch(e) {
-        // Intentar extraer JSON si viene con texto extra
-        var match = respuesta.match(/\{[\s\S]*\}/);
-        json = match ? JSON.parse(match[0]) : null;
+      } catch(e1) {
+        errorParseo = e1;
+        try {
+          // Intentar extraer JSON si viene con texto extra alrededor
+          var match = respuesta.match(/\{[\s\S]*\}/);
+          json = match ? JSON.parse(match[0]) : null;
+        } catch(e2) {
+          errorParseo = e2;
+          json = null;
+        }
       }
       if (!json) {
-        outputEl.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al parsear la respuesta. Respuesta recibida:<br><pre style="font-size:11px;margin-top:8px;white-space:pre-wrap;">' + respuesta.replace(/</g,'&lt;').slice(0,500) + '</pre></p>';
+        console.error('[Análisis IA] Error de parseo:', errorParseo);
+        // Ubicar el punto exacto del error dentro del texto crudo, si viene indicado
+        var posMatch = errorParseo && errorParseo.message.match(/position (\d+)/);
+        var pos = posMatch ? parseInt(posMatch[1], 10) : null;
+        var contexto = '';
+        if (pos !== null) {
+          var inicio = Math.max(0, pos - 80);
+          var fin    = Math.min(respuesta.length, pos + 80);
+          contexto = '<div style="font-size:11px;color:var(--muted);margin-top:.5rem;">Contexto alrededor del error (posición ' + pos + '):</div>' +
+            '<pre style="font-size:11px;margin-top:4px;padding:.5rem;background:var(--surface2);border-radius:8px;white-space:pre-wrap;color:var(--red);">' +
+            respuesta.slice(inicio, pos).replace(/</g,'&lt;') +
+            '<span style="background:rgba(248,113,113,.35);">👉' + (respuesta[pos]||'').replace(/</g,'&lt;') + '</span>' +
+            respuesta.slice(pos+1, fin).replace(/</g,'&lt;') +
+            '</pre>';
+        }
+        outputEl.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al parsear la respuesta: ' + (errorParseo ? errorParseo.message.replace(/</g,'&lt;') : 'desconocido') + '</p>' +
+          contexto +
+          '<div style="font-size:11px;color:var(--muted);margin-top:.75rem;">Respuesta completa (también impresa en la consola del navegador):</div>' +
+          '<textarea readonly style="width:100%;height:180px;margin-top:4px;font-size:11px;font-family:monospace;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.5rem;box-sizing:border-box;">' + respuesta.replace(/</g,'&lt;') + '</textarea>';
       } else {
         // Mostrar análisis
         var html = '<div style="font-size:13.5px;line-height:1.75;white-space:pre-wrap;color:var(--text);margin-bottom:1.25rem;">' + (json.analisis||'').replace(/</g,'&lt;') + '</div>';
