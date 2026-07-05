@@ -1070,21 +1070,19 @@ function irAHoy() {
   // Volver al mes actual
   calMesIdx = CAL_MESES.length - 1;
   CAL_META = Object.assign({}, CAL_MESES[calMesIdx]);
-  // Seleccionar el día de hoy si existe en DATA
+  // Seleccionar el día de hoy si existe en DATA; si no, mostrar el día más reciente disponible
   var hoy = new Date();
   var anio = String(hoy.getFullYear());
   var mes  = String(hoy.getMonth() + 1).padStart(2,'0');
   var dia  = String(hoy.getDate()).padStart(2,'0');
   var fechaHoy = anio + '-' + mes + '-' + dia;
   var diaHoy = DATA.dias.find(function(d){ return d.fecha === fechaHoy; });
-  if (diaHoy) {
-    appState.diaId = diaHoy.id;
-    appState.view = 'dia';
-    invalidarVista('dia');
-  }
+  appState.view = 'dia';
+  appState.diaId = diaHoy ? diaHoy.id : null; // null → construirDia hace fallback al día más reciente
+  invalidarVista('dia');
   updateView();
 }
-
+  
 // ── RACHA ─────────────────────────────────────────────────────
 function toggleRacha() {
   var panel = document.getElementById('nav-panel');
