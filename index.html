@@ -650,6 +650,12 @@ function prepararAnalisis() {
 async function ejecutarAnalisisIA(modo) {
   var nivel   = document.getElementById('analisis-nivel').value;
   var periodo = document.getElementById('analisis-periodo').value;
+
+  if (periodo === 'custom') {
+    document.getElementById('analisis-ia-output').innerHTML = '<p style="color:var(--muted);font-size:13px;">⚠️ El análisis con IA (rápido o profundo) solo está disponible para periodos predeterminados (Hoy, Última semana, Último mes, Últimos 3 meses). Para un rango personalizado, usa "Generar texto para análisis" y pégalo directamente en Claude.</p>';
+    return;
+  }
+
   var ahora   = new Date();
   var hoy     = new Date(ahora); hoy.setHours(23,59,59,999);
   var desde   = new Date(ahora);
