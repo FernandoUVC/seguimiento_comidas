@@ -586,22 +586,37 @@ function prepararAnalisis() {
   var nivel = document.getElementById('analisis-nivel').value;
   var periodo = document.getElementById('analisis-periodo').value;
   var ahora = new Date();
-  var hoy   = new Date(ahora); hoy.setHours(23,59,59,999);
-  var desde = new Date(ahora);
-  if (periodo === 'hoy')              desde.setDate(ahora.getDate());
-  else if (periodo === 'semana')      desde.setDate(ahora.getDate() - 7);
-  else if (periodo === 'mes')         desde.setDate(ahora.getDate() - 30);
-  else if (periodo === 'tres_meses')  desde.setDate(ahora.getDate() - 90);
-  desde.setHours(0,0,0,0);
+  var hoy, desde;
+
+  if (periodo === 'custom') {
+    var valDesde = document.getElementById('analisis-desde').value;
+    var valHasta = document.getElementById('analisis-hasta').value;
+    desde = valDesde ? new Date(valDesde + 'T00:00:00') : new Date(ahora);
+    hoy   = valHasta ? new Date(valHasta + 'T23:59:59') : new Date(ahora);
+  } else {
+    hoy   = new Date(ahora); hoy.setHours(23,59,59,999);
+    desde = new Date(ahora);
+    if (periodo === 'hoy')              desde.setDate(ahora.getDate());
+    else if (periodo === 'semana')      desde.setDate(ahora.getDate() - 7);
+    else if (periodo === 'mes')         desde.setDate(ahora.getDate() - 30);
+    else if (periodo === 'tres_meses')  desde.setDate(ahora.getDate() - 90);
+    desde.setHours(0,0,0,0);
+  }
 
   var diasFiltrados = DATA.dias.filter(function(dia) {
     var f = new Date(dia.fecha + 'T12:00:00');
     return f >= desde && f <= hoy;
   });
 
+  var etiquetaPeriodo = periodo;
+  if (periodo === 'custom') {
+    var f2 = function(d){ return d.toISOString().slice(0,10); };
+    etiquetaPeriodo = 'Personalizado (' + f2(desde) + ' a ' + f2(hoy) + ')';
+  }
+
   var lineas = [];
   lineas.push('=== ANÁLISIS NUTRICIONAL ===');
-  lineas.push('Periodo: ' + periodo + ' | Nivel: ' + nivel);
+  lineas.push('Periodo: ' + etiquetaPeriodo + ' | Nivel: ' + nivel);
   lineas.push('Días analizados: ' + diasFiltrados.length);
   lineas.push('');
 
