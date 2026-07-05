@@ -545,7 +545,43 @@ function exportarAnalisisCSV() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-  
+
+// Muestra/oculta los campos Desde-Hasta y actualiza sus límites (min/max)
+// según los datos disponibles cada vez que se activa "Personalizado".
+function toggleAnalisisCustomFechas() {
+  var periodo = document.getElementById('analisis-periodo').value;
+  var wrap = document.getElementById('analisis-custom-fechas');
+  if (!wrap) return;
+  if (periodo === 'custom') {
+    wrap.style.display = 'flex';
+    var fechas = DATA.dias.map(function(d){ return d.fecha; }).sort();
+    var minFecha = fechas.length ? fechas[0] : null;
+    var hoy = new Date();
+    var maxFecha = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+    var inputDesde = document.getElementById('analisis-desde');
+    var inputHasta = document.getElementById('analisis-hasta');
+    if (minFecha) { inputDesde.min = minFecha; inputHasta.min = minFecha; }
+    inputDesde.max = maxFecha;
+    inputHasta.max = maxFecha;
+    if (!inputDesde.value) inputDesde.value = minFecha || maxFecha;
+    if (!inputHasta.value) inputHasta.value = maxFecha;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+// Si el usuario deja "Desde" después de "Hasta", los intercambia en silencio
+function validarRangoAnalisisCustom() {
+  var inputDesde = document.getElementById('analisis-desde');
+  var inputHasta = document.getElementById('analisis-hasta');
+  if (!inputDesde || !inputHasta || !inputDesde.value || !inputHasta.value) return;
+  if (inputDesde.value > inputHasta.value) {
+    var tmp = inputDesde.value;
+    inputDesde.value = inputHasta.value;
+    inputHasta.value = tmp;
+  }
+}
+
 function prepararAnalisis() {
   var nivel = document.getElementById('analisis-nivel').value;
   var periodo = document.getElementById('analisis-periodo').value;
@@ -844,12 +880,23 @@ function renderAnalisis() {
       '<div style="display:flex;flex-direction:column;gap:.6rem;">' +
         '<div>' +
           '<div style="font-size:11px;color:var(--muted);margin-bottom:.3rem;">Período</div>' +
-          '<select id="analisis-periodo" style="width:100%;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--surface2,#1a1d27);color:var(--text);font-size:13.5px;font-family:\'DM Sans\',sans-serif;outline:none;">' +
+          '<select id="analisis-periodo" onchange="toggleAnalisisCustomFechas()" style="width:100%;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--surface2,#1a1d27);color:var(--text);font-size:13.5px;font-family:\'DM Sans\',sans-serif;outline:none;">' +
             '<option value="hoy">Hoy</option>' +
             '<option value="semana" selected>Última semana</option>' +
             '<option value="mes">Último mes</option>' +
             '<option value="tres_meses">Últimos 3 meses</option>' +
+            '<option value="custom">Personalizado</option>' +
           '</select>' +
+        '</div>' +
+        '<div id="analisis-custom-fechas" style="display:none;gap:.6rem;">' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:.3rem;">Desde</div>' +
+            '<input type="date" id="analisis-desde" onchange="validarRangoAnalisisCustom()" style="width:100%;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--surface2,#1a1d27);color:var(--text);font-size:13.5px;font-family:\'DM Sans\',sans-serif;outline:none;">' +
+          '</div>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:.3rem;">Hasta</div>' +
+            '<input type="date" id="analisis-hasta" onchange="validarRangoAnalisisCustom()" style="width:100%;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--surface2,#1a1d27);color:var(--text);font-size:13.5px;font-family:\'DM Sans\',sans-serif;outline:none;">' +
+          '</div>' +
         '</div>' +
         '<div>' +
           '<div style="font-size:11px;color:var(--muted);margin-bottom:.3rem;">Nivel de detalle</div>' +
