@@ -761,7 +761,17 @@ async function cargarRegistros() {
       .map(function(d) {
         var comidasArr = d.comidas
           ? Object.entries(d.comidas).map(function(entry) {
-              return Object.assign({}, entry[1], { _comidaId: entry[0], _diaId: d.meta.dia_id });
+              var c = entry[1] || {};
+              var tagsNormalizados = Object.assign(
+                { cubierto: [], atencion: [], contexto: [], suplementos: [] },
+                c.tags || {}
+              );
+              return Object.assign({}, c, {
+                _comidaId: entry[0],
+                _diaId: d.meta.dia_id,
+                alimentos: c.alimentos || [],
+                tags: tagsNormalizados
+              });
             }).sort(function(a,b){ return horaA24(a.hora||'').localeCompare(horaA24(b.hora||'')); })
           : [];
         return {
