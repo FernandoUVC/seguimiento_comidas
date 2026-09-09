@@ -199,6 +199,7 @@ body{padding-bottom:70px;}
   <div class="room" id="room-consejos" hidden></div>
   <div class="room" id="room-registro" hidden></div>
   <div class="room" id="room-analisis" hidden></div>
+  <div class="room" id="room-pendientes" hidden></div>
 </main>
 
 <footer>
@@ -223,6 +224,10 @@ body{padding-bottom:70px;}
   <button class="bottom-nav-item" onclick="bottomNav(this,'registro')">
     <span class="nav-icon">✏️</span>
     <span>Añadir</span>
+  </button>
+  <button class="bottom-nav-item" onclick="bottomNav(this,'pendientes')">
+    <span class="nav-icon" style="position:relative;display:inline-block;">📥<span id="pend-badge" style="display:none;position:absolute;top:-4px;right:-9px;background:var(--red);color:#000;font-size:9px;font-weight:700;border-radius:8px;min-width:14px;height:14px;line-height:14px;text-align:center;padding:0 3px;">0</span></span>
+    <span>Pendientes</span>
   </button>
 </nav>
 </footer>
@@ -312,7 +317,8 @@ const DATA = {
   dias:     [],
   resumen:  { categorias: [] },
   alertas:  [],
-  consejos: []
+  consejos: [],
+  pendientes: []
 };
 
 // Estado del form
@@ -1342,7 +1348,8 @@ var ROOMS = {
   alertas:  { room: "room-alertas",  construido: false, render: function(el){ el.innerHTML = renderAlertas(); } },
   consejos: { room: "room-consejos", construido: false, render: function(el){ el.innerHTML = renderConsejos(); } },
   registro: { room: "room-registro", construido: false, render: function(el){ el.innerHTML = renderRegistro(); } },
-  analisis: { room: "room-analisis", construido: false, render: function(el){ el.innerHTML = renderAnalisis(); } }
+  analisis: { room: "room-analisis", construido: false, render: function(el){ el.innerHTML = renderAnalisis(); } },
+  pendientes: { room: "room-pendientes", construido: false, render: function(el){ renderPendientes(el); } }
 };
 
 // Construye el contenido de la vista Día en su cuarto (respeta día seleccionado)
@@ -1436,7 +1443,8 @@ window.onload = async function() {
   const [ok] = await Promise.all([
     cargarRegistros(),
     cargarAlertas(),
-    cargarConsejos()
+    cargarConsejos(),
+    cargarPendientes()
   ]);
 
   if (!ok || DATA.dias.length === 0) return;
@@ -1896,7 +1904,271 @@ async function eliminarComida() {
     alert('Error al eliminar: ' + e.message);
   }
 }
-  
+
+// ─────────────────────────────────────────────
+//  MÓDULO PENDIENTES (revisión del pipeline externo)
+// ─────────────────────────────────────────────
+var pendState = { idx: 0 };
+var PEND_IMG_CACHE = {};
+
+// "2026-09-04" -> "vie04" (mismo criterio que dia_id() en tools/contexto.py)
+function diaIdDesdeFecha(fecha) {
+  var abr = ['dom','lun','mar','mie','jue','vie','sab'];
+  var d = new Date(fecha + 'T12:00:00');
+  return abr[d.getDay()] + String(d.getDate()).padStart(2, '0');
+}
+
+async function cargarPendientes() {
+  try {
+    var data = await window._fbGet('pipeline/pendientes');
+    DATA.pendientes = Object.entries(data || {}).map(function(entry) {
+      return Object.assign({ id: entry[0] }, entry[1]);
+    }).sort(function(a, b) {
+      return (a.fecha + 'T' + horaA24(a.hora || '')).localeCompare(b.fecha + 'T' + horaA24(b.hora || ''));
+    });
+  } catch(e) {
+    console.error('[Firebase] cargarPendientes error:', e);
+    DATA.pendientes = [];
+  }
+  try {
+    actualizarBadgePendientes();
+  } catch(e) {
+    console.error('[Firebase] actualizarBadgePendientes error:', e);
+  }
+}
+
+function actualizarBadgePendientes() {
+  var el = document.getElementById('pend-badge');
+  if (!el) return;
+  var n = (DATA.pendientes || []).length;
+  el.textContent = n > 99 ? '99+' : String(n);
+  el.style.display = n > 0 ? 'inline-block' : 'none';
+}
+
+function renderPendientes(el) {
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">' +
+      '<div style="font-family:\'Fraunces\',serif;font-size:1.05rem;font-weight:300;">Pendientes</div>' +
+      '<div id="pend-avance" style="font-size:12px;color:var(--muted);"></div>' +
+    '</div>' +
+    '<div id="pend-card" style="padding-bottom:90px;"></div>' +
+    '<div id="pend-actions" style="display:none;position:fixed;left:0;right:0;bottom:70px;z-index:160;background:rgba(24,28,39,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 14px;gap:8px;">' +
+      '<button onclick="pendAprobar()" style="flex:1;padding:.75rem;border-radius:12px;background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.4);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✅ Aprobar</button>' +
+      '<button onclick="pendAbrirCorregir()" style="flex:1;padding:.75rem;border-radius:12px;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✏️ Corregir</button>' +
+      '<button onclick="pendQuitar()" style="flex:0 0 84px;padding:.75rem;border-radius:12px;background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.3);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">🗑</button>' +
+    '</div>';
+  pendPintar();
+}
+
+function pendPintar() {
+  var card = document.getElementById('pend-card');
+  var avance = document.getElementById('pend-avance');
+  var acciones = document.getElementById('pend-actions');
+  if (!card) return;
+
+  if (!DATA.pendientes || DATA.pendientes.length === 0) {
+    if (avance) avance.textContent = '';
+    if (acciones) acciones.style.display = 'none';
+    card.innerHTML = '<div class="empty-state"><span>🎉</span>No hay pendientes por revisar</div>';
+    return;
+  }
+
+  if (pendState.idx >= DATA.pendientes.length) pendState.idx = DATA.pendientes.length - 1;
+  if (pendState.idx < 0) pendState.idx = 0;
+
+  var item = DATA.pendientes[pendState.idx];
+  if (avance) avance.textContent = (pendState.idx + 1) + ' de ' + DATA.pendientes.length;
+  if (acciones) acciones.style.display = 'flex';
+
+  var tags = item.tags || {};
+  var confMap = { alta: 'green', media: 'yellow', baja: 'red' };
+  var confClase = confMap[item.confianza] || 'gray';
+
+  var alimentosHTML = (item.alimentos || []).map(function(a) {
+    return '<div class="food-item"><div class="food-dot"></div>' + a + '</div>';
+  }).join('');
+
+  var problemasHTML = '';
+  if (item.problemas && item.problemas.length) {
+    problemasHTML = '<div class="form-status err" style="display:flex;">' +
+      '<div>' + item.problemas.map(function(p){ return '⚠️ ' + p; }).join('<br>') + '</div>' +
+    '</div>';
+  }
+
+  var dudasHTML = '';
+  if (item.dudas && item.dudas.length) {
+    dudasHTML = '<div class="note">' +
+      '<strong>Dudas</strong><ul style="margin:6px 0 0;padding-left:18px;">' +
+      item.dudas.map(function(d){ return '<li>' + d + '</li>'; }).join('') +
+      '</ul></div>';
+  }
+
+  card.innerHTML =
+    '<div id="pend-fotos" style="margin-bottom:1rem;">' +
+      '<div class="empty-state" style="padding:1.5rem;"><span>⏳</span>Cargando foto…</div>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:.5rem;">' +
+      '<div class="meal-title" style="font-size:16px;">' + (item.icono || '🍽️') + ' ' + (item.titulo || '') + '</div>' +
+      '<span class="resumen-badge badge-' + confClase + '">' + (item.confianza || '?') + '</span>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:.75rem;">' + (item.fecha || '') + ' · ' + formatHora(item.hora || '') + '</div>' +
+    problemasHTML +
+    (alimentosHTML ? '<div class="food-list">' + alimentosHTML + '</div>' : '') +
+    (tags.cubierto && tags.cubierto.length ? '<div class="tag-section-title">Cubierto</div><div class="tag-grid">' + renderTags(tags.cubierto, 'ok') + '</div>' : '') +
+    (tags.atencion && tags.atencion.length ? '<div class="tag-section-title">Atención</div><div class="tag-grid">' + renderTags(tags.atencion, 'warn') + '</div>' : '') +
+    (tags.contexto && tags.contexto.length ? '<div class="tag-section-title">Contexto</div><div class="tag-grid">' + renderTags(tags.contexto, 'ctx') + '</div>' : '') +
+    (tags.suplementos && tags.suplementos.length ? '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' + renderTags(tags.suplementos, 'purple') + '</div>' : '') +
+    (item.nota ? '<div class="note info">' + item.nota + '</div>' : '') +
+    dudasHTML +
+    '<div id="pend-status"></div>';
+
+  pendCargarFotos(item.id);
+}
+
+async function pendCargarFotos(id) {
+  var cont = document.getElementById('pend-fotos');
+  if (!cont) return;
+  if (PEND_IMG_CACHE[id]) {
+    cont.innerHTML = PEND_IMG_CACHE[id].map(function(b64) {
+      return '<img src="data:image/jpeg;base64,' + b64 + '" style="width:100%;border-radius:12px;margin-bottom:8px;display:block;">';
+    }).join('');
+    return;
+  }
+  try {
+    var data = await window._fbGet('pipeline/imagenes/' + id);
+    var imgs = (data && data.imagenes) || [];
+    PEND_IMG_CACHE[id] = imgs;
+    // Si el usuario ya avanzó a otro pendiente mientras cargaba, no pisar su vista
+    var itemActual = DATA.pendientes[pendState.idx];
+    if (!itemActual || itemActual.id !== id) return;
+    cont.innerHTML = imgs.length
+      ? imgs.map(function(b64){ return '<img src="data:image/jpeg;base64,' + b64 + '" style="width:100%;border-radius:12px;margin-bottom:8px;display:block;">'; }).join('')
+      : '<div class="empty-state" style="padding:1.5rem;"><span>🖼️</span>Sin foto</div>';
+  } catch(e) {
+    console.error('[Firebase] pendCargarFotos error:', e);
+    var itemActual2 = DATA.pendientes[pendState.idx];
+    if (itemActual2 && itemActual2.id === id) {
+      cont.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><span>⚠️</span>No se pudo cargar la foto</div>';
+    }
+  }
+}
+
+function pendMostrarError(msg) {
+  var status = document.getElementById('pend-status');
+  if (!status) return;
+  status.innerHTML = '<div class="form-status err" style="display:flex;margin-top:10px;">⚠️ ' + msg + '</div>';
+}
+
+// Aprobar, Corregir y Quitar terminan todos aquí: sacan el item local
+// (el borrado remoto de pipeline/pendientes ya se hizo antes de llamarla)
+function pendAvanzar() {
+  DATA.pendientes.splice(pendState.idx, 1);
+  if (pendState.idx >= DATA.pendientes.length) pendState.idx = Math.max(0, DATA.pendientes.length - 1);
+  actualizarBadgePendientes();
+  pendPintar();
+}
+
+async function pendAprobar() {
+  var item = DATA.pendientes[pendState.idx];
+  if (!item) return;
+  try {
+    var diaId = diaIdDesdeFecha(item.fecha);
+    var tags = item.tags || {};
+    var tagsFinal = {};
+    ['cubierto','atencion','contexto','suplementos'].forEach(function(k){
+      if (tags[k] && tags[k].length) tagsFinal[k] = tags[k];
+    });
+    var comida = {
+      titulo:    item.titulo || '',
+      hora:      normalizarHora(item.hora || ''),
+      icono:     item.icono || '🍽️',
+      alimentos: item.alimentos || [],
+      tags: tagsFinal,
+      nota: item.nota || ''
+    };
+    await guardarComidaEnFirebase(item.fecha, diaId, comida, '');
+    await window._fbSet('pipeline/pendientes/' + item.id, null);
+    await window._fbSet('pipeline/imagenes/' + item.id, null);
+    delete PEND_IMG_CACHE[item.id];
+    invalidarVista('dia');
+    invalidarVista('resumen');
+    cargarRegistros(); // en background: no frena el avance a la siguiente
+    pendAvanzar();
+  } catch(e) {
+    pendMostrarError('No se pudo aprobar: ' + e.message);
+  }
+}
+
+// Mueve a pipeline/descartados en vez de borrar: un toque accidental no debe
+// perder el dato, solo sacarlo de la cola (no hay deshacer en esta room).
+async function pendQuitar() {
+  var item = DATA.pendientes[pendState.idx];
+  if (!item) return;
+  try {
+    var copia = Object.assign({}, item);
+    delete copia.id;
+    await window._fbSet('pipeline/descartados/' + item.id, copia);
+    await window._fbSet('pipeline/pendientes/' + item.id, null);
+    delete PEND_IMG_CACHE[item.id];
+    pendAvanzar();
+  } catch(e) {
+    pendMostrarError('No se pudo quitar: ' + e.message);
+  }
+}
+
+// Reposiciona el panel flotante de Corregir por encima del teclado on-screen
+function pendPosicionarFloat() {
+  var panel = document.getElementById('pend-corregir-float');
+  if (!panel) return;
+  if (window.visualViewport) {
+    var vv = window.visualViewport;
+    var teclado = window.innerHeight - vv.height - vv.offsetTop;
+    panel.style.bottom = (Math.max(teclado, 0) + 150) + 'px';
+  } else {
+    panel.style.bottom = '150px'; // respaldo si visualViewport no existe
+  }
+}
+
+function pendAbrirCorregir() {
+  var item = DATA.pendientes[pendState.idx];
+  if (!item) return;
+  var panel = document.getElementById('pend-corregir-float');
+  var txt = document.getElementById('pend-corregir-texto');
+  if (txt) txt.value = '';
+  panel.style.display = 'block';
+  pendPosicionarFloat();
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', pendPosicionarFloat);
+  if (txt) txt.focus();
+}
+
+function pendCerrarCorregir() {
+  var panel = document.getElementById('pend-corregir-float');
+  if (panel) panel.style.display = 'none';
+  if (window.visualViewport) window.visualViewport.removeEventListener('resize', pendPosicionarFloat);
+}
+
+// Mueve el pendiente completo a pipeline/revisados con la instrucción tal cual
+// escrita — es una instrucción para el pipeline, nunca termina en una nota.
+async function pendConfirmarCorregir() {
+  var item = DATA.pendientes[pendState.idx];
+  if (!item) return;
+  var txt = document.getElementById('pend-corregir-texto');
+  var texto = txt ? txt.value.trim() : '';
+  if (!texto) return;
+  try {
+    var copia = Object.assign({}, item);
+    delete copia.id;
+    copia.instruccion = texto;
+    await window._fbSet('pipeline/revisados/' + item.id, copia);
+    await window._fbSet('pipeline/pendientes/' + item.id, null);
+    delete PEND_IMG_CACHE[item.id];
+    pendCerrarCorregir();
+    pendAvanzar();
+  } catch(e) {
+    pendMostrarError('No se pudo enviar la corrección: ' + e.message);
+  }
+}
+
 function formatHora(h) {
   if (!h) return '';
   h = h.trim().toLowerCase();
@@ -2155,6 +2427,14 @@ function renderHero() {
     <div style="position:sticky;bottom:0;background:var(--surface);padding-top:.85rem;margin-top:.85rem;border-top:1px solid var(--border);">
       <button onclick="aplicarRvModal()" style="width:100%;padding:.75rem;border-radius:12px;background:var(--accent);color:#000;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Listo</button>
     </div>
+  </div>
+</div>
+<div id="pend-corregir-float" style="display:none;position:fixed;left:14px;right:14px;bottom:150px;z-index:170;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:14px;">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Instrucción para el pipeline — no se guarda como nota</div>
+  <textarea id="pend-corregir-texto" rows="3" placeholder="Ej: eran 3 huevos, fue compartido, el queso era manchego" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+  <div style="display:flex;gap:8px;margin-top:10px;">
+    <button onclick="pendCerrarCorregir()" style="flex:1;padding:.6rem;border-radius:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
+    <button onclick="pendConfirmarCorregir()" style="flex:2;padding:.6rem;border-radius:10px;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Confirmar corrección</button>
   </div>
 </div>
 <script>
