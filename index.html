@@ -386,6 +386,26 @@ async function generarComidaId(anio, mes, diaId) {
   while (existentes[comidaId]) { contador++; comidaId = diaId + '_c' + contador; }
   return comidaId;
 }
+// Escribe una comida en registros/{anio}/{mes}/{diaId}/comidas y crea meta si no existe.
+// Usada por submitGForm (flujo CSV) y por la room Pendientes (flujo pipeline).
+async function guardarComidaEnFirebase(fecha, diaId, comida, resumenDiaFallback) {
+  var partes = fecha.split('-');
+  var anio = partes[0];
+  var mes  = partes[1];
+  var comidaId = await generarComidaId(anio, mes, diaId);
+  await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/comidas/' + comidaId, comida);
+  var metaExistente = await window._fbGet('registros/' + anio + '/' + mes + '/' + diaId + '/meta');
+  if (!metaExistente) {
+    var d = new Date(fecha + 'T12:00:00');
+    var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var etiqueta = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()];
+    await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/meta', {
+      fecha: fecha, dia_id: diaId, etiqueta: etiqueta, resumen_dia: resumenDiaFallback || ''
+    });
+  }
+  return { anio: anio, mes: mes, comidaId: comidaId };
+}
 async function submitGForm() {
   var csv = document.getElementById('csv-input').value.trim();
   if (!csv) { showFormStatus('err', '⚠️ Pega el CSV antes de enviar.'); return; }
@@ -397,10 +417,6 @@ async function submitGForm() {
   try {
     var fecha   = cols[0].trim();
     var diaId   = cols[1].trim();
-    var partes  = fecha.split('-');
-    var anio    = partes[0];
-    var mes     = partes[1];
-    var comidaId = await generarComidaId(anio, mes, diaId);
     function splitPipe(s){ return s ? s.split('|').map(function(x){return x.trim();}).filter(Boolean) : []; }
     var comida = {
       titulo:    (cols[5]||'').trim(),
@@ -415,19 +431,7 @@ async function submitGForm() {
       },
       nota: (cols[13]||'').trim()
     };
-    // Escribe o actualiza la comida
-    await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/comidas/' + comidaId, comida);
-    // Escribe meta del día (no sobreescribe si ya existe)
-    var metaExistente = await window._fbGet('registros/' + anio + '/' + mes + '/' + diaId + '/meta');
-    if (!metaExistente) {
-      var d = new Date(fecha + 'T12:00:00');
-      var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-      var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-      var etiqueta = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()];
-      await window._fbSet('registros/' + anio + '/' + mes + '/' + diaId + '/meta', {
-        fecha: fecha, dia_id: diaId, etiqueta: etiqueta, resumen_dia: (cols[3]||'').trim()
-      });
-    }
+    await guardarComidaEnFirebase(fecha, diaId, comida, (cols[3]||'').trim());
     showFormStatus('sending', 'Guardado. Actualizando vista…');
     document.getElementById('csv-input').value = '';
     // Recarga automática: vuelve a leer Firebase y refresca la vista sin recargar la página
