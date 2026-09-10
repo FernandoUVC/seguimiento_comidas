@@ -93,32 +93,26 @@ Este script no opina: pasa o truena, con el motivo exacto.
 
 ---
 
-## Fase 4 — Revisión (`revision.html`)
+## Fase 4 — Revisión (✅ existe, distinto de lo planeado)
 
-**Qué hace:**
+**Qué hace, en la versión real:** no es un `revision.html` con export a CSV — es la room **Pendientes**, dentro de NutriLog (`index.html`). Una comida por pantalla, foto cargada bajo demanda, y tres decisiones que escriben a Firebase al instante: Aprobar, Corregir (con instrucción para el pipeline) o Quitar. `tools/revisar.py` sigue existiendo como visor local alterno (genera `revision.html`), pero la revisión real ya no depende de él.
 
-Un HTML de un solo archivo, generado por el script, que muestra cada foto al lado de lo que la IA entendió. Permite editar cualquier campo ahí mismo y marcar filas como aprobadas o rechazadas.
-
-Al terminar, exporta `aprobado.csv`.
-
-**Este es el único paso que requiere tu tiempo.** Y es donde el diseño acepta que la IA se equivoca: tu trabajo pasa de transcribir a corregir.
-
-**Listo cuando:** puedes corregir "nuez de la India" por "cacahuate" y que el cambio se refleje en el archivo exportado.
+**Este sigue siendo el único paso que requiere tu tiempo.** El diseño no cambió: tu trabajo es corregir, no transcribir.
 
 ---
 
-## Fase 5 — Escritura a Firebase (`enviar.py`)
+## Fase 5 — Subida a revisión (`tools/subir.py`, ✅ existe)
 
-**Qué hace:**
+**Qué hace, en la versión real:** no escribe en `registros/` directamente (ese diseño cambió — ver Fase 4). Lee el borrador de Claude Code (`borrador2.json`) y `manifiesto.json`, y deja cada comida en `pipeline/pendientes` + `pipeline/imagenes` para que la room Pendientes la revise. La escritura final a `registros/` ocurre cuando el humano aprueba dentro de la app, no en este script.
 
-Lee `aprobado.csv` y escribe cada registro en la RTDB por REST, respetando la estructura año/mes/día/comidas.
+**Requisitos de seguridad — los tres ya están:**
+- **Modo prueba por defecto:** sin `--subir` solo imprime qué haría, no escribe nada. `--subir` sube de verdad.
+- **Idempotencia:** `C:\dev\nutrilog-proceso\subidos.json` lleva registro de los ids ya subidos; si un id ya está ahí, se salta.
+- **Anti-duplicado:** antes de subir, consulta `registros/{anio}/{mes}/{diaId}/comidas` y si ya hay una comida real a esa misma hora, se salta y avisa — evita mandar a revisión algo que ya se registró por otro medio (la app, o una corrida anterior ya aprobada).
 
-**Requisitos de seguridad:**
-- Idempotencia: correrlo dos veces no debe duplicar nada
-- Registro local de lo enviado, para poder auditar
-- Modo de prueba (`--dry-run`) que muestre qué escribiría sin escribir
+`--limpiar` borra `pipeline/pendientes`, `pipeline/imagenes`, `pipeline/revisados` y `pipeline/descartados` (no toca `subidos.json` ni `registros/`).
 
-**Listo cuando:** un registro de prueba aparece en NutriLog abierto en el navegador.
+**Listo cuando:** ✅ cumplido — un pendiente de prueba subido con `--subir` aparece en la room Pendientes de NutriLog, y correr `subir.py` de nuevo lo salta por "ya subido".
 
 ---
 
@@ -135,9 +129,9 @@ Un solo comando que corre Fases 1 a 4 y te deja el HTML de revisión abierto. La
 | Riesgo | Mitigación |
 |---|---|
 | Fotos suben a GitHub | `.gitignore` desde la Fase 1, verificado con `git status` |
-| Registros duplicados | Chequeo contra Firebase en Fase 3 + idempotencia en Fase 5 |
-| Tags inventados rompen el sistema | Vocabulario cerrado + validación determinista |
-| Escritura masiva errónea a Firebase | `--dry-run` obligatorio antes del primer envío real |
+| Registros duplicados | Chequeo contra `registros/` + idempotencia con `subidos.json`, ambos en `tools/subir.py` |
+| Tags inventados rompen el sistema | Vocabulario cerrado + validación determinista (`revisar.py`) |
+| Escritura masiva errónea a Firebase | Modo prueba por defecto en `subir.py`; `--subir` es explícito |
 | EXIF en UTC en vez de hora local | Verificar contra una foto de hora conocida en Fase 1 |
 | Drive en modo streaming | Confirmado en Fase 0 antes de escribir código |
 
@@ -151,4 +145,4 @@ Por eso la revisión humana es parte del diseño, no un parche. El objetivo no e
 
 Una fase a la vez, probada antes de seguir. Si se arma la cadena completa antes de probar la primera pieza, acabas depurando cinco cosas sin saber cuál falló.
 
-**Siguiente paso:** Fase 0.
+**Siguiente paso:** automatizar la Fase 0-2 (hoy `preparar.py` + Claude Code + `subir.py` se corren a mano en orden); Fase 6 ("un solo comando") sigue sin construirse.
