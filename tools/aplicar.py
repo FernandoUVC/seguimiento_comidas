@@ -139,11 +139,11 @@ def bajar():
 def escribir():
     if not REVISADOS_JSON.exists():
         print(f"Falta {REVISADOS_JSON}. Corre --bajar primero.")
-        return
+        sys.exit(1)
     if not CORREGIDOS_JSON.exists():
         print(f"Falta {CORREGIDOS_JSON}. Hace falta revisar las fotos y escribirlo "
               f"primero (ver tools/prompt-aplicar.md).")
-        return
+        sys.exit(1)
 
     manifiesto = json.loads(REVISADOS_JSON.read_text(encoding="utf-8"))
     correcciones = {c["id"]: c for c in json.loads(CORREGIDOS_JSON.read_text(encoding="utf-8"))}
@@ -156,7 +156,7 @@ def escribir():
     print("Bajando respaldo de registros/ antes de escribir...")
     if not respaldo():
         print("Respaldo fallido — cancelo. No se escribió nada.")
-        return
+        sys.exit(1)
     print()
 
     n_escritos = n_saltados = 0

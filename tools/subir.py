@@ -134,7 +134,7 @@ def main():
     for f in (borrador, MANIFIESTO):
         if not f.exists():
             print(f"Falta {f}")
-            return
+            sys.exit(1)
 
     comidas = json.loads(borrador.read_text(encoding="utf-8"))
     manifiesto = json.loads(MANIFIESTO.read_text(encoding="utf-8"))

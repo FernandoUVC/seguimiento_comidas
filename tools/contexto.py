@@ -85,7 +85,7 @@ def respaldo():
 def main():
     if not MANIFIESTO.exists():
         print(f"No existe {MANIFIESTO}. Corre preparar.py primero.")
-        return
+        sys.exit(1)
 
     if "--respaldo" in sys.argv:
         respaldo()
@@ -93,7 +93,7 @@ def main():
     manifiesto = json.loads(MANIFIESTO.read_text(encoding="utf-8"))
     if not manifiesto:
         print("El manifiesto esta vacio.")
-        return
+        sys.exit(1)
 
     fechas = sorted({f["fecha"] for f in manifiesto})
     print(f"Fechas en el lote: {', '.join(fechas)}\n")

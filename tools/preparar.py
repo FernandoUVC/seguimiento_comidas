@@ -10,6 +10,7 @@ Uso:
 
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -80,7 +81,7 @@ def reducir(origen, destino):
 def main():
     if not ENTRADA.exists():
         print(f"No existe la carpeta de entrada: {ENTRADA}")
-        return
+        sys.exit(1)
 
     REDUCIDAS.mkdir(parents=True, exist_ok=True)
 
