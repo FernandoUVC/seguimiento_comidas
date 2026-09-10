@@ -66,18 +66,20 @@ def siguiente_id(anio, mes, did, comidas):
 
 
 def respaldo():
+    """Baja una copia completa de registros/ a disco. Devuelve True si se guardó, False si falló."""
     RESPALDOS.mkdir(parents=True, exist_ok=True)
     print("Bajando respaldo completo...")
     datos = get("registros")
     if datos is None:
         print("  respaldo fallido")
-        return
+        return False
     marca = datetime.now().strftime("%Y%m%d_%H%M%S")
     destino = RESPALDOS / f"registros_{marca}.json"
     destino.write_text(
         json.dumps(datos, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     print(f"  guardado en {destino}")
+    return True
 
 
 def main():
