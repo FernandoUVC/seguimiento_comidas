@@ -21,6 +21,14 @@ comida en formato JSON.
 3. `contexto.json` — resumen de los últimos 14 días registrados en la base:
    suplementos recientes y sus fechas, rachas activas, patrones del periodo.
 
+## Tamaño del lote y verificación de correspondencia
+
+**Máximo 6 fotos por lote de lectura.** Si el manifiesto trae más, se procesa en varios lotes sucesivos, nunca todas las fotos de golpe en una sola tanda de lectura.
+
+Por cada lote, antes de escribir el JSON: **verifica explícitamente que cada descripción corresponde al archivo que dice.** Concretamente — para cada foto del lote, anota el nombre de archivo junto a una descripción corta de lo que muestra, y revisa esa lista completa antes de pasar el lote a `alimentos`/`titulo`. Solo después de esa verificación se escribe el JSON del lote y se sube.
+
+Esta regla existe porque ya pasó: en un lote de ~12-24 fotos leídas juntas, el contenido visual de varias fotos se emparejó con el nombre de archivo equivocado al escribir la descripción — no fue un bug del pipeline, fue un error de correspondencia foto↔archivo durante la extracción. Lotes chicos y una verificación explícita antes de continuar son la mitigación.
+
 ## Campos que NO generas
 
 Estos los calcula el script. Ignóralos por completo:
