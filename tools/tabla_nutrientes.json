@@ -1,0 +1,1007 @@
+{
+  "_version": 3,
+  "_criterio": {
+    "cubierto": "Guía para la IA. Un tag entra si el alimento, en una porción típica, es fuente relevante del nutriente (aprox. 15% o más del valor diario) o si el compuesto es característico de ese alimento. La IA decide a criterio según porción y contexto visible.",
+    "auditar": "Subconjunto que auditar_tags.py revisa. Solo entra un tag si se cumple casi siempre, aunque cambien la preparación o la porción. Si hay duda, el grupo no audita nada.",
+    "excluir": "Frases que anulan el grupo. Se evalúan por alimento, no por comida completa.",
+    "grupos_sin_auditar": "Existen solo para orientar a la IA (incluidos los que dicen qué NO marcar)."
+  },
+  "grupos": {
+    "carne_res": {
+      "palabras": [
+        "res",
+        "bistec",
+        "suadero",
+        "arrachera",
+        "carne asada",
+        "carne molida",
+        "carne deshebrada",
+        "sirloin",
+        "new york",
+        "rib eye",
+        "cecina",
+        "barbacoa",
+        "picadillo",
+        "hamburguesa"
+      ],
+      "excluir": [
+        "bistec de cerdo",
+        "bistec de pollo",
+        "hamburguesa de pollo",
+        "hamburguesa vegetal",
+        "hamburguesa de lenteja",
+        "carne de soya"
+      ],
+      "cubierto": [
+        "proteina",
+        "hierro_hemo",
+        "zinc",
+        "vitamina_b12",
+        "selenio"
+      ],
+      "auditar": [
+        "hierro_hemo",
+        "zinc",
+        "vitamina_b12"
+      ],
+      "porcion_referencia": "100 g cocida",
+      "nota": "La mejor fuente común de hierro hemo, zinc y B12. Una porción cubre casi toda la B12 del día."
+    },
+    "cerdo": {
+      "palabras": [
+        "cerdo",
+        "puerco",
+        "pastor",
+        "carnitas",
+        "chuleta",
+        "lomo",
+        "cochinita",
+        "costilla"
+      ],
+      "excluir": [
+        "queso de puerco"
+      ],
+      "cubierto": [
+        "proteina",
+        "zinc",
+        "vitamina_b12",
+        "selenio",
+        "hierro_hemo"
+      ],
+      "auditar": [
+        "zinc"
+      ],
+      "porcion_referencia": "100 g cocida",
+      "nota": "Carne con zinc y B12 relevantes. Hierro hemo presente pero menor que la res; se deja a criterio."
+    },
+    "embutidos_procesados": {
+      "palabras": [
+        "chorizo",
+        "longaniza",
+        "jamón",
+        "tocino",
+        "salchicha",
+        "salami",
+        "chicharrón",
+        "queso de puerco"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "proteina"
+      ],
+      "auditar": [],
+      "nota": "No usar como fuente de hierro, zinc o B12. Considerar en atencion: sodio_alto o sodio_moderado, ultraprocesados, grasas_saturadas; fritos si es chicharrón."
+    },
+    "pollo_pavo": {
+      "palabras": [
+        "pollo",
+        "pechuga",
+        "muslo",
+        "tinga",
+        "pavo"
+      ],
+      "excluir": [
+        "consomé",
+        "caldo en polvo",
+        "sabor pollo",
+        "knorr"
+      ],
+      "cubierto": [
+        "proteina",
+        "vitamina_b6",
+        "selenio"
+      ],
+      "auditar": [
+        "vitamina_b6"
+      ],
+      "porcion_referencia": "100 g cocido",
+      "nota": "Destaca en B6 y selenio. Tiene poco hierro hemo (un tercio de la res): no marcarlo salvo porción grande de pierna/muslo."
+    },
+    "pescado_graso": {
+      "palabras": [
+        "salmón",
+        "sardina",
+        "sardinas",
+        "atún",
+        "macarela",
+        "trucha",
+        "arenque"
+      ],
+      "excluir": [
+        "sabor"
+      ],
+      "cubierto": [
+        "proteina",
+        "omega3",
+        "vitamina_d",
+        "vitamina_b12",
+        "selenio"
+      ],
+      "auditar": [
+        "omega3",
+        "vitamina_b12"
+      ],
+      "porcion_referencia": "100 g / 1 lata",
+      "nota": "Fuente principal de omega-3 (EPA/DHA). El atún en lata tiene menos que el salmón, pero sigue contando. Sardina con espinas también aporta calcio."
+    },
+    "pescado_magro": {
+      "palabras": [
+        "pescado",
+        "tilapia",
+        "mojarra",
+        "boquinete",
+        "boquinetes",
+        "huachinango",
+        "robalo",
+        "mero",
+        "basa",
+        "cazón",
+        "filete de pescado"
+      ],
+      "excluir": [
+        "sabor"
+      ],
+      "cubierto": [
+        "proteina",
+        "selenio",
+        "vitamina_b12"
+      ],
+      "auditar": [
+        "selenio"
+      ],
+      "porcion_referencia": "100-150 g",
+      "nota": "Pescado blanco: mucha proteína y selenio, casi nada de omega-3. NO marcar omega3 salvo que se vea que es salmón, sardina o atún."
+    },
+    "mariscos": {
+      "palabras": [
+        "camarón",
+        "camarones",
+        "pulpo",
+        "calamar",
+        "ostión",
+        "ostiones",
+        "almeja",
+        "almejas",
+        "mejillón",
+        "mejillones",
+        "jaiba",
+        "cangrejo"
+      ],
+      "excluir": [
+        "sabor",
+        "caldo en polvo"
+      ],
+      "cubierto": [
+        "proteina",
+        "selenio",
+        "vitamina_b12",
+        "zinc"
+      ],
+      "auditar": [
+        "selenio"
+      ],
+      "porcion_referencia": "100 g",
+      "nota": "Poco omega-3. Ostiones y almejas: zinc y B12 muy altos. Camarón: zinc moderado, se deja a criterio."
+    },
+    "huevo": {
+      "palabras": [
+        "huevo",
+        "huevos"
+      ],
+      "excluir": [
+        "clara de huevo",
+        "claras",
+        "sin huevo"
+      ],
+      "cubierto": [
+        "proteina",
+        "colina",
+        "vitamina_b12",
+        "selenio",
+        "biotina",
+        "vitamina_d"
+      ],
+      "auditar": [
+        "colina"
+      ],
+      "porcion_referencia": "2 huevos",
+      "nota": "Una de las mejores fuentes de colina (hasta con 1 huevo). La vitamina D es moderada: marcarla con 2 o más huevos. Las claras solas solo aportan proteína."
+    },
+    "leguminosas": {
+      "palabras": [
+        "frijol",
+        "frijoles",
+        "lenteja",
+        "lentejas",
+        "garbanzo",
+        "garbanzos",
+        "habas",
+        "alubias",
+        "edamame"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "proteina",
+        "fibra",
+        "folato",
+        "hierro_vegetal",
+        "magnesio",
+        "prebioticos"
+      ],
+      "auditar": [
+        "fibra",
+        "folato"
+      ],
+      "porcion_referencia": "1/2 a 1 taza cocida",
+      "nota": "Fibra y folato muy altos incluso en media taza. Refritos de bolsa también cuentan (considerar sodio)."
+    },
+    "chicharo": {
+      "palabras": [
+        "chícharo",
+        "chícharos"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "fibra",
+        "vitamina_k",
+        "vitamina_c"
+      ],
+      "auditar": [],
+      "nota": "Suele venir en poca cantidad (en arroz o como guarnición). A criterio según porción."
+    },
+    "maiz_nixtamal": {
+      "palabras": [
+        "tortilla de maíz",
+        "tortillas de maíz",
+        "tostada",
+        "tostadas",
+        "totopos",
+        "tlayuda",
+        "sope",
+        "sopes",
+        "gordita",
+        "gorditas",
+        "tamal",
+        "tamales",
+        "pozole",
+        "elote",
+        "esquites",
+        "palomitas"
+      ],
+      "excluir": [
+        "harina",
+        "trigo"
+      ],
+      "cubierto": [
+        "carbohidratos_integrales",
+        "fibra",
+        "calcio"
+      ],
+      "auditar": [
+        "carbohidratos_integrales"
+      ],
+      "porcion_referencia": "3 tortillas",
+      "nota": "El maíz es grano entero. La nixtamalización aporta calcio moderado: marcarlo con 3 o más tortillas. 'tortilla' sola es ambigua (maíz o harina): la IA decide por la foto, el script no la audita. Totopos y tostadas fritas: considerar fritos."
+    },
+    "granos_integrales": {
+      "palabras": [
+        "avena",
+        "quinoa",
+        "arroz integral",
+        "pan integral",
+        "granola"
+      ],
+      "excluir": [
+        "galleta",
+        "galletas",
+        "sabor"
+      ],
+      "cubierto": [
+        "carbohidratos_integrales",
+        "fibra",
+        "magnesio"
+      ],
+      "auditar": [
+        "carbohidratos_integrales"
+      ],
+      "nota": "La granola lleva azúcar: considerar azucar_alta. 'Pan integral' comercial a veces es mayormente harina refinada: a criterio."
+    },
+    "amaranto": {
+      "palabras": [
+        "amaranto",
+        "alegría",
+        "alegrías"
+      ],
+      "excluir": [
+        "sabor"
+      ],
+      "cubierto": [
+        "carbohidratos_integrales",
+        "proteina",
+        "hierro_vegetal",
+        "magnesio",
+        "fibra"
+      ],
+      "auditar": [
+        "carbohidratos_integrales"
+      ],
+      "nota": "Grano entero con hierro y magnesio altos para su tamaño. El calcio es moderado: marcarlo solo con porción grande (no con una alegría). La alegría lleva miel o piloncillo: considerar azucar_alta."
+    },
+    "carbohidratos_refinados": {
+      "palabras": [
+        "arroz blanco",
+        "arroz rojo",
+        "arroz",
+        "espagueti",
+        "pasta",
+        "sopa de fideo",
+        "pan blanco",
+        "bolillo",
+        "telera",
+        "tortilla de harina",
+        "tortillas de harina",
+        "hot cake",
+        "hot cakes"
+      ],
+      "excluir": [
+        "arroz integral",
+        "pasta integral"
+      ],
+      "cubierto": [],
+      "auditar": [],
+      "nota": "NO marcar carbohidratos_integrales. Antes del pipeline se marcaba el arroz blanco como integral: era un error."
+    },
+    "papa": {
+      "palabras": [
+        "papa",
+        "papas"
+      ],
+      "excluir": [
+        "papas fritas de bolsa",
+        "sabritas"
+      ],
+      "cubierto": [
+        "potasio",
+        "vitamina_b6",
+        "vitamina_c"
+      ],
+      "auditar": [],
+      "nota": "No es grano integral. Buena en potasio con porción entera; en cubitos o poca cantidad, a criterio. Fritas: considerar fritos."
+    },
+    "aguacate": {
+      "palabras": [
+        "aguacate",
+        "guacamole"
+      ],
+      "excluir": [
+        "salsa de aguacate",
+        "salsa verde de aguacate"
+      ],
+      "cubierto": [
+        "grasas_mono",
+        "fibra",
+        "potasio",
+        "folato"
+      ],
+      "auditar": [
+        "grasas_mono"
+      ],
+      "porcion_referencia": "1/2 aguacate",
+      "nota": "Grasa monoinsaturada siempre. Potasio y folato son moderados: a criterio con porción de 1/2 pieza o más. La 'salsa de aguacate' de taquería suele ser casi pura salsa verde."
+    },
+    "aceite_oliva": {
+      "palabras": [
+        "aceite de oliva",
+        "aceitunas"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "grasas_mono",
+        "vitamina_e",
+        "antioxidantes"
+      ],
+      "auditar": [
+        "grasas_mono"
+      ]
+    },
+    "platano": {
+      "palabras": [
+        "plátano",
+        "plátanos",
+        "platano",
+        "plátano macho"
+      ],
+      "excluir": [
+        "sabor"
+      ],
+      "cubierto": [
+        "potasio",
+        "vitamina_b6",
+        "fibra"
+      ],
+      "auditar": [
+        "vitamina_b6"
+      ],
+      "porcion_referencia": "1 pieza",
+      "nota": "Un plátano cubre ~25% de la B6 del día; el potasio es real pero moderado (~9%). Macho frito: considerar fritos."
+    },
+    "cacahuate": {
+      "palabras": [
+        "cacahuate",
+        "cacahuates",
+        "crema de cacahuate"
+      ],
+      "excluir": [
+        "cacahuate japonés",
+        "sabor"
+      ],
+      "cubierto": [
+        "proteina",
+        "grasas_mono",
+        "vitamina_e",
+        "magnesio"
+      ],
+      "auditar": [],
+      "porcion_referencia": "1 puñado (28 g)",
+      "nota": "Con un puñado sí cuenta. Espolvoreado sobre yogurt (1 cucharada) aporta poco: no forzar magnesio. Japonés: considerar sodio y fritos."
+    },
+    "girasol_almendra": {
+      "palabras": [
+        "semillas de girasol",
+        "girasol",
+        "almendra",
+        "almendras"
+      ],
+      "excluir": [
+        "leche de almendra",
+        "sabor"
+      ],
+      "cubierto": [
+        "vitamina_e",
+        "magnesio",
+        "grasas_saludables",
+        "selenio"
+      ],
+      "auditar": [
+        "vitamina_e"
+      ],
+      "nota": "Las dos fuentes comunes más fuertes de vitamina E: incluso 1 cucharada de girasol aporta ~16%. Magnesio: a criterio según porción."
+    },
+    "pepitas": {
+      "palabras": [
+        "pepitas",
+        "semillas de calabaza"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "magnesio",
+        "zinc",
+        "hierro_vegetal",
+        "grasas_saludables"
+      ],
+      "auditar": [
+        "magnesio"
+      ],
+      "nota": "De las mejores fuentes de magnesio y zinc vegetal."
+    },
+    "chia_linaza": {
+      "palabras": [
+        "chía",
+        "chia",
+        "linaza"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "omega3",
+        "fibra",
+        "calcio"
+      ],
+      "auditar": [
+        "omega3",
+        "fibra"
+      ],
+      "porcion_referencia": "1 cucharada",
+      "nota": "Omega-3 vegetal (ALA), distinto al del pescado pero cuenta. La linaza entera casi no se absorbe; molida sí."
+    },
+    "nuez": {
+      "palabras": [
+        "nuez",
+        "nueces",
+        "nuez pecana",
+        "nuez de castilla",
+        "pistache",
+        "pistaches"
+      ],
+      "excluir": [
+        "nuez de brasil",
+        "nuez moscada",
+        "sabor"
+      ],
+      "cubierto": [
+        "grasas_saludables",
+        "antioxidantes"
+      ],
+      "auditar": [],
+      "nota": "En México 'nuez' suele ser pecana, que casi no tiene omega-3. Solo la nuez de Castilla (walnut) aporta omega3 relevante: marcarlo solo si se identifica."
+    },
+    "nuez_de_brasil": {
+      "palabras": [
+        "nuez de brasil"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "selenio"
+      ],
+      "auditar": [
+        "selenio"
+      ],
+      "nota": "Media nuez ya cubre el selenio del día. Como hábito, no más de 1 al día."
+    },
+    "yogurt_kefir": {
+      "palabras": [
+        "yogurt",
+        "yogur",
+        "kéfir",
+        "kefir"
+      ],
+      "excluir": [
+        "helado de yogurt",
+        "sabor yogurt",
+        "frozen"
+      ],
+      "cubierto": [
+        "proteina",
+        "probioticos",
+        "calcio",
+        "vitamina_b12"
+      ],
+      "auditar": [
+        "probioticos",
+        "calcio"
+      ],
+      "porcion_referencia": "3/4 a 1 taza",
+      "nota": "Si es de sabor con azúcar, considerar azucar_alta."
+    },
+    "queso": {
+      "palabras": [
+        "queso",
+        "quesos",
+        "panela",
+        "oaxaca",
+        "manchego",
+        "chihuahua",
+        "cotija",
+        "parmesano",
+        "quesadilla",
+        "quesadillas"
+      ],
+      "excluir": [
+        "queso crema",
+        "queso de puerco",
+        "queso vegano",
+        "philadelphia"
+      ],
+      "cubierto": [
+        "proteina",
+        "calcio"
+      ],
+      "auditar": [
+        "calcio"
+      ],
+      "porcion_referencia": "30-60 g",
+      "nota": "Queso maduro (manchego, chihuahua, parmesano) tiene más calcio que fresco. Espolvoreado en poca cantidad: a criterio. Requesón y queso crema aportan poco calcio. Considerar grasas_saturadas y sodio."
+    },
+    "leche": {
+      "palabras": [
+        "leche",
+        "licuado"
+      ],
+      "excluir": [
+        "leche de almendra",
+        "leche de coco",
+        "leche vegetal",
+        "leche de avena",
+        "leche condensada",
+        "dulce de leche",
+        "cajeta"
+      ],
+      "cubierto": [
+        "calcio",
+        "proteina",
+        "vitamina_b12",
+        "vitamina_d"
+      ],
+      "auditar": [],
+      "nota": "Un vaso sí cuenta. El chorrito del café con leche aporta poco: no marcar calcio por eso. Vitamina D solo si es fortificada."
+    },
+    "hojas_verde_oscuro": {
+      "palabras": [
+        "espinaca",
+        "espinacas",
+        "acelga",
+        "acelgas",
+        "kale",
+        "col rizada",
+        "quelites",
+        "quelite",
+        "verdolagas",
+        "berros",
+        "lechuga romana",
+        "arúgula"
+      ],
+      "excluir": [
+        "pasta de espinaca",
+        "tortilla de espinaca",
+        "sabor"
+      ],
+      "cubierto": [
+        "vitamina_k",
+        "folato",
+        "vitamina_a",
+        "magnesio",
+        "hierro_vegetal"
+      ],
+      "auditar": [
+        "vitamina_k"
+      ],
+      "nota": "Vitamina K muy alta aun en poca cantidad (un puño de espinaca cruda supera el 100%). Magnesio y hierro destacan sobre todo cocidas."
+    },
+    "lechuga_generica": {
+      "palabras": [
+        "lechuga"
+      ],
+      "excluir": [
+        "lechuga romana"
+      ],
+      "cubierto": [],
+      "auditar": [],
+      "nota": "La lechuga de tacos y tortas suele ser orejona/iceberg: aporta muy poco. Marcar vitamina_k solo si en la foto se ven hojas verde oscuro."
+    },
+    "brocoli_col": {
+      "palabras": [
+        "brócoli",
+        "brocoli",
+        "col",
+        "col morada",
+        "repollo",
+        "col de bruselas",
+        "coles de bruselas"
+      ],
+      "excluir": [
+        "sabor"
+      ],
+      "cubierto": [
+        "glucosinolatos",
+        "vitamina_c",
+        "vitamina_k",
+        "fibra"
+      ],
+      "auditar": [
+        "glucosinolatos",
+        "vitamina_c"
+      ],
+      "nota": "Crucíferas con vitamina C y K altas. Repollo rallado en tacos: poca cantidad, la vitamina K queda a criterio."
+    },
+    "coliflor": {
+      "palabras": [
+        "coliflor"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "glucosinolatos",
+        "vitamina_c",
+        "fibra"
+      ],
+      "auditar": [
+        "glucosinolatos"
+      ],
+      "nota": "Crucífera con buena vitamina C pero poca vitamina K."
+    },
+    "rabano": {
+      "palabras": [
+        "rábano",
+        "rábanos",
+        "rabano",
+        "rabanos"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "glucosinolatos"
+      ],
+      "auditar": [],
+      "nota": "Casi sin vitamina K. Como guarnición de taquería la cantidad es mínima: a criterio."
+    },
+    "nopal": {
+      "palabras": [
+        "nopal",
+        "nopales",
+        "nopalitos"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "fibra",
+        "prebioticos",
+        "magnesio",
+        "antiinflamatorio"
+      ],
+      "auditar": [
+        "fibra"
+      ],
+      "nota": "Fibra soluble (mucílago). antiinflamatorio a criterio (evidencia moderada). Su calcio se absorbe mal: no marcar calcio por el nopal."
+    },
+    "frutas_vitamina_c": {
+      "palabras": [
+        "naranja",
+        "naranjas",
+        "mandarina",
+        "mandarinas",
+        "toronja",
+        "guayaba",
+        "guayabas",
+        "fresa",
+        "fresas",
+        "kiwi",
+        "kiwis",
+        "piña",
+        "papaya",
+        "mango",
+        "pimiento",
+        "pimientos",
+        "morrón",
+        "jugo de naranja"
+      ],
+      "excluir": [
+        "sabor",
+        "gelatina",
+        "mermelada",
+        "agua de",
+        "yogurt de fresa",
+        "en almíbar",
+        "pastor",
+        "pastel"
+      ],
+      "cubierto": [
+        "vitamina_c",
+        "antioxidantes"
+      ],
+      "auditar": [
+        "vitamina_c"
+      ],
+      "nota": "Una pieza o una taza suele cubrir la mayor parte de la vitamina C del día. Limón exprimido y jícama aportan menos: a criterio. Manzana, uva y plátano aportan poca vitamina C."
+    },
+    "frutas_enzimas": {
+      "palabras": [
+        "kiwi",
+        "kiwis",
+        "papaya",
+        "piña"
+      ],
+      "excluir": [
+        "en almíbar",
+        "enlatada",
+        "asada",
+        "pastor",
+        "pastel",
+        "mermelada",
+        "sabor",
+        "jugo embotellado"
+      ],
+      "cubierto": [
+        "enzimas_digestivas"
+      ],
+      "auditar": [
+        "enzimas_digestivas"
+      ],
+      "nota": "Solo frescas: el calor y el enlatado destruyen la enzima. La piña del pastor no cuenta."
+    },
+    "frutos_rojos": {
+      "palabras": [
+        "frutos rojos",
+        "frambuesa",
+        "frambuesas",
+        "arándano",
+        "arándanos",
+        "zarzamora",
+        "zarzamoras",
+        "moras",
+        "granada"
+      ],
+      "excluir": [
+        "sabor",
+        "mermelada",
+        "gelatina",
+        "cereal",
+        "yogurt de"
+      ],
+      "cubierto": [
+        "antioxidantes",
+        "fibra",
+        "vitamina_c"
+      ],
+      "auditar": [
+        "antioxidantes"
+      ],
+      "nota": "Antocianinas (antioxidantes). Frambuesa y zarzamora con mucha fibra. Jugo de granada embotellado: conserva polifenoles pero considerar azucar_alta."
+    },
+    "carotenos": {
+      "palabras": [
+        "zanahoria",
+        "zanahorias",
+        "camote",
+        "camotes",
+        "calabaza de castilla",
+        "calabaza butternut",
+        "melón",
+        "melón chino"
+      ],
+      "excluir": [
+        "calabacita",
+        "calabacitas",
+        "melón verde",
+        "gota de miel",
+        "pastel de zanahoria",
+        "sabor"
+      ],
+      "cubierto": [
+        "vitamina_a",
+        "antioxidantes"
+      ],
+      "auditar": [
+        "vitamina_a"
+      ],
+      "nota": "Betacaroteno alto. OJO: calabacita (zucchini) casi no tiene. Mango y papaya tienen vitamina A moderada: a criterio, no se auditan."
+    },
+    "jitomate": {
+      "palabras": [
+        "jitomate",
+        "jitomates",
+        "tomate rojo",
+        "pico de gallo",
+        "salsa roja"
+      ],
+      "excluir": [
+        "catsup",
+        "cátsup",
+        "ketchup"
+      ],
+      "cubierto": [
+        "antioxidantes"
+      ],
+      "auditar": [],
+      "nota": "Licopeno (antioxidante), mejor absorbido cocido. En pico de gallo o salsa la cantidad es poca: a criterio."
+    },
+    "ajo": {
+      "palabras": [
+        "ajo",
+        "ajos",
+        "ajo picado"
+      ],
+      "excluir": [
+        "sal de ajo",
+        "sabor"
+      ],
+      "cubierto": [
+        "allicina",
+        "prebioticos"
+      ],
+      "auditar": [
+        "allicina"
+      ],
+      "nota": "La alicina es propia del ajo; se forma al picarlo o machacarlo."
+    },
+    "cebolla": {
+      "palabras": [
+        "cebolla",
+        "cebollas",
+        "cebolla morada",
+        "cebollín",
+        "poro",
+        "cebollitas"
+      ],
+      "excluir": [
+        "aros de cebolla",
+        "sabor"
+      ],
+      "cubierto": [
+        "prebioticos",
+        "antioxidantes",
+        "allicina"
+      ],
+      "auditar": [],
+      "nota": "Prebióticos (fructanos) y quercetina. En rigor la alicina es del ajo; el catálogo usa 'allicina' también para la cebolla (compuestos azufrados), por eso se deja a criterio. En tacos suele ser guarnición chica."
+    },
+    "chile": {
+      "palabras": [
+        "chile",
+        "chiles",
+        "jalapeño",
+        "jalapeños",
+        "habanero",
+        "serrano",
+        "chipotle",
+        "chile de árbol",
+        "chiltepín",
+        "salsa picante",
+        "salsa macha"
+      ],
+      "excluir": [
+        "morrón",
+        "poblano",
+        "chiles en nogada",
+        "chile relleno",
+        "sin chile"
+      ],
+      "cubierto": [
+        "capsaicina"
+      ],
+      "auditar": [
+        "capsaicina"
+      ],
+      "nota": "La capsaicina es lo que pica: el morrón no tiene y el poblano muy poca."
+    },
+    "curcuma": {
+      "palabras": [
+        "cúrcuma",
+        "curcuma"
+      ],
+      "excluir": [],
+      "cubierto": [
+        "curcumina",
+        "antiinflamatorio"
+      ],
+      "auditar": [
+        "curcumina"
+      ]
+    },
+    "jengibre": {
+      "palabras": [
+        "jengibre"
+      ],
+      "excluir": [
+        "sabor"
+      ],
+      "cubierto": [
+        "antiinflamatorio"
+      ],
+      "auditar": [],
+      "nota": "Gingerol, no curcumina. En la versión anterior estaba mal agrupado con la cúrcuma."
+    },
+    "cacao": {
+      "palabras": [
+        "cacao",
+        "chocolate amargo",
+        "nibs"
+      ],
+      "excluir": [
+        "sabor",
+        "chocolate con leche"
+      ],
+      "cubierto": [
+        "antioxidantes",
+        "magnesio"
+      ],
+      "auditar": [],
+      "nota": "Solo cacao alto (70% o más). Chocolates 'sin azúcar' comerciales suelen tener poco cacao."
+    }
+  }
+}

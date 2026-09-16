@@ -172,18 +172,37 @@ Registra el tag en `tags_suplementos` **y** agrega sus nutrientes a
 - `d3k2_capsula` → vitamina_d, vitamina_k. Anota la dosis alta en `nota`
   (NOW Mega D3 & MK-7, 5000 IU D3 + 180 mcg MK-7)
 
+## Guía de nutrientes por alimento
+
+Antes de asignar `tags_cubierto`, lee `tools/tabla_nutrientes.json` (incluye
+`_criterio`, que explica sus campos).
+
+Es una **guía a criterio, no una regla obligatoria**: por cada alimento que
+reconozcas ahí, considera sus tags `cubierto` y decide si los pones según la
+porción comida y lo que se ve en la foto — una mordida o media nuez no
+cuentan como porción entera.
+
+Lee también la `nota` de cada grupo: varias dicen explícitamente qué **no**
+marcar (arroz blanco no es integral, lechuga genérica no es vitamina K,
+pescado blanco no aporta omega-3, etc.) — tienen prioridad sobre cualquier
+suposición previa.
+
+Si decides no poner un tag aunque el alimento esté en la tabla, está bien: un
+script de auditoría lo revisa después y Fernando decide en la room
+Pendientes.
+
+Usa solo tags del catálogo cerrado. La tabla es apoyo: no sustituye lo que
+ves en la foto.
+
 ## Reglas de inferencia
 
 **Alimentos específicos**
 - Brócoli y coliflor → `glucosinolatos`
 - Ajo → `allicina`. Cebolla → `allicina` + `prebioticos`
-- Nopal → `fibra` + `prebioticos` + `antiinflamatorio`
 - Kiwi → `enzimas_digestivas` + `vitamina_c`
 - Piña → `enzimas_digestivas`
 - Frijoles y garbanzos → `prebioticos` + `hierro_vegetal` + `folato`
 - Salmón → `omega3` + `vitamina_d` + `selenio`
-- Tilapia → `omega3` (aporta menos que el salmón; se registra igual)
-- Amaranto → `proteina` + `calcio` + `hierro_vegetal`
 - Salmas de maíz azul → `antioxidantes` (antocianinas)
 - Salmas de nopal → `antiinflamatorio`, horneadas, sin `fritos`
 - Nuez de Brasil → `selenio`. Anota no exceder una al día si es hábito regular
