@@ -261,7 +261,8 @@ def rama_fotos(ejecutar):
 
     log.info(
         f"Rama fotos: lote estable ({len(nuevas)} fotos) -> "
-        f"{'ejecutando' if ejecutar else 'correría'} preparar -> contexto -> claude -> subir --subir"
+        f"{'ejecutando' if ejecutar else 'correría'} preparar -> contexto -> claude -> "
+        f"auditar_tags -> subir --subir"
     )
     if not ejecutar:
         return
@@ -280,10 +281,25 @@ def rama_fotos(ejecutar):
         return
     _verificar_agrupacion()
 
+    # Los avisos de posible omision son apoyo, no un paso critico: si fallan
+    # no abortan la rama, solo quedan registrados y la corrida sigue con
+    # advertencias. subir.py corre igual, con o sin posibles_omisiones.
+    con_advertencias = not paso(
+        "auditar_tags.py --escribir-avisos",
+        [sys.executable, str(HERRAMIENTAS / "auditar_tags.py"), "--escribir-avisos"],
+    )
+    if con_advertencias:
+        log.warning(
+            "auditar_tags.py falló — sigo sin avisos de posible omisión para esta tanda"
+        )
+
     if not paso("subir.py --subir", [sys.executable, str(HERRAMIENTAS / "subir.py"), "--subir"]):
         return
 
-    log.info("Rama fotos: completada")
+    if con_advertencias:
+        log.info("Rama fotos: completada con advertencias (auditar_tags.py falló)")
+    else:
+        log.info("Rama fotos: completada")
 
 
 # --- Rama 2: correcciones pendientes ---------------------------------------------

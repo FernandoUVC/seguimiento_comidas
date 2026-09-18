@@ -195,6 +195,9 @@ def main():
             "problemas": problemas.get(i, []),
             "fotos": fotos,
         }
+        omisiones = c.get("posibles_omisiones") or []
+        if omisiones:
+            pendiente["posibles_omisiones"] = omisiones
 
         imagenes = []
         for f in fotos:

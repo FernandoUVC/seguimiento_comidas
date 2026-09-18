@@ -30,6 +30,7 @@ Solo libreria estandar. Sin dependencias externas.
 """
 
 import json
+import os
 import re
 import shutil
 import sys
@@ -224,7 +225,11 @@ def escribir_avisos(ruta, comidas, resultados):
         else:
             c.pop("posibles_omisiones", None)
 
-    ruta.write_text(json.dumps(comidas, indent=2, ensure_ascii=False), encoding="utf-8")
+    # Escritura atomica: si el proceso muere a medio escribir, el .tmp queda
+    # incompleto pero ruta nunca se toca hasta el os.replace() final.
+    temporal = ruta.with_suffix(ruta.suffix + ".tmp")
+    temporal.write_text(json.dumps(comidas, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(temporal, ruta)
     print(f"Avisos escritos en {ruta}")
 
 
