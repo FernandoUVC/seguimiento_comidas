@@ -19,6 +19,10 @@ Uso:
     python orquestar.py --ejecutar            (corre de verdad)
     python orquestar.py --solo-fotos          (fuerza solo la rama de fotos)
     python orquestar.py --solo-correcciones   (fuerza solo la rama de correcciones)
+    python orquestar.py --minutos-estable N   (cambia la compuerta de estabilidad del
+                                                lote de fotos, default 45; solo afecta
+                                                esa compuerta, se registra como WARNING
+                                                en la bitacora si N no es el default)
 
 Bitacora con rotacion: C:\\dev\\nutrilog-proceso\\orquestador.log
 Candado de una sola corrida a la vez: C:\\dev\\nutrilog-proceso\\orquestador.lock
@@ -243,7 +247,7 @@ def _verificar_agrupacion():
         )
 
 
-def rama_fotos(ejecutar):
+def rama_fotos(ejecutar, minutos_estable=VENTANA_ESTABLE_MIN):
     nuevas = _fotos_nuevas()
     if not nuevas:
         log.info("Rama fotos: sin fotos nuevas")
@@ -251,8 +255,16 @@ def rama_fotos(ejecutar):
 
     mas_reciente = max(p.stat().st_mtime for p in nuevas)
     antiguedad_min = (time.time() - mas_reciente) / 60
-    if antiguedad_min < VENTANA_ESTABLE_MIN:
-        faltan = VENTANA_ESTABLE_MIN - antiguedad_min
+
+    if minutos_estable != VENTANA_ESTABLE_MIN:
+        log.warning(
+            f"Rama fotos: --minutos-estable {minutos_estable} (default {VENTANA_ESTABLE_MIN}) "
+            f"— salvaguarda de estabilidad pasada por encima; el lote lleva "
+            f"{antiguedad_min:.0f} min estable de verdad"
+        )
+
+    if antiguedad_min < minutos_estable:
+        faltan = minutos_estable - antiguedad_min
         log.info(
             f"Rama fotos: lote inestable ({len(nuevas)} fotos), "
             f"faltan {faltan:.0f} min para considerarlo estable"
@@ -341,11 +353,20 @@ def main():
     correr_fotos = not (solo_correcciones and not solo_fotos)
     correr_correcciones = not (solo_fotos and not solo_correcciones)
 
+    minutos_estable = VENTANA_ESTABLE_MIN
+    if "--minutos-estable" in sys.argv:
+        i = sys.argv.index("--minutos-estable") + 1
+        valor = sys.argv[i] if i < len(sys.argv) else None
+        if valor is None or not valor.lstrip("-").isdigit() or int(valor) < 0:
+            print(f"--minutos-estable necesita un entero >= 0, recibi: {valor!r}")
+            sys.exit(1)
+        minutos_estable = int(valor)
+
     try:
         with candado():
             log.info(f"--- inicio (modo={'ejecutar' if ejecutar else 'prueba'}) ---")
             if correr_fotos:
-                rama_fotos(ejecutar)
+                rama_fotos(ejecutar, minutos_estable)
             if correr_correcciones:
                 rama_correcciones(ejecutar)
             log.info("--- fin ---")
