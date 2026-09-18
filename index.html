@@ -1960,6 +1960,52 @@ function renderPendientes(el) {
   pendPintar();
 }
 
+// Bloque "posibles_omisiones": tags de tools/tabla_nutrientes.json que el
+// auditor detectó como probablemente faltantes. Agrupa por tag único (si
+// dos entradas comparten tag, un solo botón); solo se muestra si el campo
+// viene en el pendiente — propuestas viejas sin el campo no cambian.
+function pendRenderOmisiones(item) {
+  var omisiones = item.posibles_omisiones;
+  if (!omisiones || !omisiones.length) return '';
+  var cubierto = (item.tags && item.tags.cubierto) || [];
+  var porTag = {};
+  omisiones.forEach(function(o) {
+    (o.tags || []).forEach(function(t) {
+      if (!porTag[t]) porTag[t] = [];
+      if (porTag[t].indexOf(o.palabra) === -1) porTag[t].push(o.palabra);
+    });
+  });
+  var filas = Object.keys(porTag).map(function(t) {
+    var agregado = cubierto.indexOf(t) !== -1;
+    var origen = esc(porTag[t].join(', '));
+    var colorBtn = agregado
+      ? 'background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.4);'
+      : 'background:var(--surface2);color:var(--muted);border:1px solid var(--border);';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);">' +
+      '<div style="font-size:12px;color:var(--muted);">' + esc(labelTag(t)) + ' <span style="opacity:.7;">(' + origen + ')</span></div>' +
+      '<button onclick="pendToggleOmision(\'' + esc(t) + '\')" style="flex-shrink:0;width:34px;height:34px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;' + colorBtn + '">' +
+      (agregado ? '✓' : '+') + '</button>' +
+    '</div>';
+  }).join('');
+  return '<div style="margin:10px 0;padding:10px 12px;background:var(--surface2);border:1px dashed var(--border);border-radius:10px;">' +
+    '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;">Posible omisión</div>' +
+    filas +
+  '</div>';
+}
+
+// Agrega/quita un tag de tags_cubierto en memoria (no escribe a Firebase
+// hasta Aprobar). Única fuente de estado: si un tag está en
+// item.tags.cubierto, pendAprobar ya lo escribe tal cual.
+function pendToggleOmision(tag) {
+  var item = DATA.pendientes[pendState.idx];
+  if (!item) return;
+  if (!item.tags) item.tags = {};
+  if (!item.tags.cubierto) item.tags.cubierto = [];
+  var i = item.tags.cubierto.indexOf(tag);
+  if (i === -1) item.tags.cubierto.push(tag); else item.tags.cubierto.splice(i, 1);
+  pendPintar();
+}
+
 function pendPintar() {
   var card = document.getElementById('pend-card');
   var avance = document.getElementById('pend-avance');
@@ -2020,6 +2066,7 @@ function pendPintar() {
     (tags.suplementos && tags.suplementos.length ? '<div class="tag-section-title">Suplementos</div><div class="tag-grid">' + renderTags(tags.suplementos, 'purple') + '</div>' : '') +
     (item.nota ? '<div class="note info">' + item.nota + '</div>' : '') +
     dudasHTML +
+    pendRenderOmisiones(item) +
     '<div id="pend-status"></div>';
 
   pendCargarFotos(item.id);
