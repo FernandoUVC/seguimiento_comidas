@@ -1949,13 +1949,23 @@ function renderPendientes(el) {
   el.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">' +
       '<div style="font-family:\'Fraunces\',serif;font-size:1.05rem;font-weight:300;">Pendientes</div>' +
-      '<div id="pend-avance" style="font-size:12px;color:var(--muted);"></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<button id="pend-prev" onclick="pendAnterior()" style="width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;cursor:pointer;">‹</button>' +
+        '<div id="pend-avance" style="font-size:12px;color:var(--muted);min-width:60px;text-align:center;"></div>' +
+        '<button id="pend-next" onclick="pendSiguiente()" style="width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;cursor:pointer;">›</button>' +
+      '</div>' +
     '</div>' +
-    '<div id="pend-card" style="padding-bottom:90px;"></div>' +
-    '<div id="pend-actions" style="display:none;position:fixed;left:0;right:0;bottom:70px;z-index:160;background:rgba(24,28,39,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 14px;gap:8px;">' +
+    '<div id="pend-card" style="padding-bottom:132px;"></div>' +
+    '<div id="pend-actions" style="display:none;flex-direction:column;position:fixed;left:0;right:0;bottom:70px;z-index:160;background:rgba(24,28,39,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 14px;gap:8px;">' +
+      '<div style="display:flex;justify-content:center;align-items:center;gap:16px;">' +
+        '<button id="pend-prev-2" onclick="pendAnterior()" style="width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;cursor:pointer;">‹</button>' +
+        '<button id="pend-next-2" onclick="pendSiguiente()" style="width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;cursor:pointer;">›</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;">' +
       '<button onclick="pendAprobar()" style="flex:1;padding:.75rem;border-radius:12px;background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.4);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✅ Aprobar</button>' +
       '<button onclick="pendAbrirCorregir()" style="flex:1;padding:.75rem;border-radius:12px;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✏️ Corregir</button>' +
       '<button onclick="pendQuitar()" style="flex:0 0 84px;padding:.75rem;border-radius:12px;background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.3);font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">🗑</button>' +
+      '</div>' +
     '</div>';
   pendPintar();
 }
@@ -2006,11 +2016,52 @@ function pendToggleOmision(tag) {
   pendPintar();
 }
 
+// Deja los 4 botones de navegación (par de arriba + par de abajo) en el
+// mismo estado, deshabilitados en los extremos de la lista (sin wrap-around,
+// igual que el clamp que ya usan pendPintar/pendAvanzar). Se fuerza
+// opacity/cursor por JS porque los botones ya traen background/color
+// inline y el estilo :disabled del navegador casi no se nota encima.
+function pendActualizarNav() {
+  var deshabPrev = pendState.idx <= 0;
+  var deshabNext = pendState.idx >= (DATA.pendientes ? DATA.pendientes.length : 0) - 1;
+  ['pend-prev', 'pend-prev-2'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = deshabPrev;
+    b.style.opacity = deshabPrev ? '.35' : '1';
+    b.style.cursor = deshabPrev ? 'default' : 'pointer';
+  });
+  ['pend-next', 'pend-next-2'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = deshabNext;
+    b.style.opacity = deshabNext ? '.35' : '1';
+    b.style.cursor = deshabNext ? 'default' : 'pointer';
+  });
+}
+
+// Navegación libre: solo cambian pendState.idx y repintan, no tocan
+// DATA.pendientes ni Firebase — ver la nota de pendActualizarNav sobre por
+// qué no dan la vuelta en los extremos.
+function pendAnterior() {
+  if (pendState.idx <= 0) return;
+  pendState.idx--;
+  pendPintar();
+}
+
+function pendSiguiente() {
+  if (pendState.idx >= DATA.pendientes.length - 1) return;
+  pendState.idx++;
+  pendPintar();
+}
+
 function pendPintar() {
   var card = document.getElementById('pend-card');
   var avance = document.getElementById('pend-avance');
   var acciones = document.getElementById('pend-actions');
   if (!card) return;
+
+  pendActualizarNav();
 
   if (!DATA.pendientes || DATA.pendientes.length === 0) {
     if (avance) avance.textContent = '';
