@@ -50,10 +50,8 @@ CATALOGO = {
 }
 
 NUTRIENTES = {
-    "menjurje": ["vitamina_c", "vitamina_e", "vitamina_k", "vitamina_b6", "folato",
-                 "potasio", "magnesio", "grasas_mono", "grasas_saludables",
-                 "curcumina", "capsaicina", "antiinflamatorio", "antioxidantes",
-                 "probioticos", "enzimas_digestivas"],
+    "menjurje": ["curcumina", "antiinflamatorio", "antioxidantes", "capsaicina",
+                 "vitamina_c", "grasas_mono"],
     "omega3_capsula": ["omega3", "vitamina_e"],
     "doublex_media": ["vitamina_a", "vitamina_b6", "vitamina_b12", "vitamina_c",
                       "vitamina_d", "vitamina_e", "folato", "biotina", "calcio",

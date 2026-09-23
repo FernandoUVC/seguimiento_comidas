@@ -162,9 +162,15 @@ Bioactivos: `allicina` `capsaicina` `curcumina` `glucosinolatos`
 Registra el tag en `tags_suplementos` **y** agrega sus nutrientes a
 `tags_cubierto` si no están:
 
-- `menjurje` → vitamina_c, vitamina_e, vitamina_k, vitamina_b6, folato, potasio,
-  magnesio, grasas_mono, grasas_saludables, curcumina, capsaicina,
-  antiinflamatorio, antioxidantes, probioticos, enzimas_digestivas
+- `menjurje` (bebida matutina en ayunas, ~1 vaso — **no** es cápsula) →
+  tags_cubierto: curcumina, antiinflamatorio, antioxidantes, capsaicina,
+  vitamina_c, grasas_mono. Agrega `azucar_alta` a `tags_atencion` (jugo Jumex
+  + miel en ayunas ≈ 25 g de azúcar), salvo que se indique la versión con
+  agua tibia en vez de jugo de naranja. Agrega `en_ayunas` a `tags_contexto`.
+  En `alimentos`, descríbelo corto (p. ej. "vasito de menjurje matutino"):
+  no listes los ingredientes (aceite de oliva, cúrcuma, cayena, naranja,
+  etc.) — `auditar_tags.py` los reconoce por palabra y generaría avisos de
+  omisión redundantes cada mañana.
 - `omega3_capsula` → omega3, vitamina_e
 - `doublex_media` / `doublex_completa` → vitamina_a, vitamina_b6, vitamina_b12,
   vitamina_c, vitamina_d, vitamina_e, folato, biotina, calcio, magnesio, zinc,
