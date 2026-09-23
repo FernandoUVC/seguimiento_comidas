@@ -1,5 +1,5 @@
 {
-  "_version": 3,
+  "_version": 4,
   "_criterio": {
     "cubierto": "Guía para la IA. Un tag entra si el alimento, en una porción típica, es fuente relevante del nutriente (aprox. 15% o más del valor diario) o si el compuesto es característico de ese alimento. La IA decide a criterio según porción y contexto visible.",
     "auditar": "Subconjunto que auditar_tags.py revisa. Solo entra un tag si se cumple casi siempre, aunque cambien la preparación o la porción. Si hay duda, el grupo no audita nada.",
@@ -97,7 +97,6 @@
         "pollo",
         "pechuga",
         "muslo",
-        "tinga",
         "pavo"
       ],
       "excluir": [
