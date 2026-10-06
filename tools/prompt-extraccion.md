@@ -43,14 +43,14 @@ candidatas a pertenecer a la misma comida.
 Dentro de la ventana, decides por contenido:
 - Plato fuerte y luego café o postre → misma comida
 - Un plato completamente distinto → comidas separadas
-- Foto de cápsulas, blísters o cajas de suplementos → se fusiona con la comida
-  cercana, llenando `tags_suplementos`
+- Foto de cápsulas, blísters o cajas de suplementos, o de un vaso de menjurje
+  → se fusiona con la comida cercana, llenando `tags_suplementos`
 
 **Regla del borde: cuando dudes, separa.** Un registro de más se une con un clic
 en la revisión. Un registro fusionado por error obliga a reconstruir dos.
 Separar es el error barato.
 
-**Suplementos aislados sí son un registro propio.** Si una foto de cápsulas cae
+**Suplementos aislados sí son un registro propio.** Si una foto de suplemento cae
 fuera de toda ventana, genera su propia entrada: describes el suplemento en
 `titulo` y `alimentos`, llenas `tags_suplementos` y `tags_cubierto`, y dejas
 `tags_atencion` y `tags_contexto` vacíos.
@@ -157,12 +157,25 @@ Bioactivos: `allicina` `capsaicina` `curcumina` `glucosinolatos`
 
 `menjurje` `omega3_capsula` `doublex_media` `doublex_completa` `d3k2_capsula`
 
+## Identificación visual de suplementos
+
+**Las ÚNICAS cápsulas/tabletas son: Double X, Omega 3 y vitamina D (d3k2).**
+
+- **Menjurje = VASO de líquido, se toma con popote.** En la foto es un vaso con
+  bebida, no pastillas. NUNCA lo describas como cápsula, pastilla, tableta ni
+  "cápsula de menjurje" — ni en `titulo`, ni en `alimentos`, ni en `nota`.
+- **Double X: cuenta las cápsulas.** Media dosis (`doublex_media`) = 3 cápsulas,
+  una de cada color. Dosis completa (`doublex_completa`) = 6 cápsulas, dos de
+  cada color. En la gran mayoría de los casos es media dosis. Si no puedes
+  contarlas con certeza, asume `doublex_media` y anótalo en `dudas`.
+
 ## Suplementos — dos acciones simultáneas
 
 Registra el tag en `tags_suplementos` **y** agrega sus nutrientes a
 `tags_cubierto` si no están:
 
-- `menjurje` (bebida matutina en ayunas, ~1 vaso — **no** es cápsula) →
+- `menjurje` (bebida matutina en ayunas, ~1 vaso con popote — **no** es
+  cápsula) →
   tags_cubierto: curcumina, antiinflamatorio, antioxidantes, capsaicina,
   vitamina_c, grasas_mono. Agrega `azucar_alta` a `tags_atencion` (jugo Jumex
   + miel en ayunas ≈ 25 g de azúcar), salvo que se indique la versión con
@@ -172,9 +185,10 @@ Registra el tag en `tags_suplementos` **y** agrega sus nutrientes a
   etc.) — `auditar_tags.py` los reconoce por palabra y generaría avisos de
   omisión redundantes cada mañana.
 - `omega3_capsula` → omega3, vitamina_e
-- `doublex_media` / `doublex_completa` → vitamina_a, vitamina_b6, vitamina_b12,
-  vitamina_c, vitamina_d, vitamina_e, folato, biotina, calcio, magnesio, zinc,
-  selenio, cromo, antioxidantes, curcumina, antiinflamatorio
+- `doublex_media` (3 cápsulas) / `doublex_completa` (6 cápsulas) → vitamina_a,
+  vitamina_b6, vitamina_b12, vitamina_c, vitamina_d, vitamina_e, folato,
+  biotina, calcio, magnesio, zinc, selenio, cromo, antioxidantes, curcumina,
+  antiinflamatorio
 - `d3k2_capsula` → vitamina_d, vitamina_k. Anota la dosis alta en `nota`
   (NOW Mega D3 & MK-7, 5000 IU D3 + 180 mcg MK-7)
 
@@ -215,6 +229,10 @@ ves en la foto.
 - Aguacate y plátano → `potasio`, contrapeso del sodio
 - Agua con chía → `omega3` + `fibra` + `hidratacion` + `magnesio` + `calcio`
 - Coco → `grasas_saturadas`, aclarando en la nota que es de cadena media
+- Frutos rojos → casi siempre la mezcla congelada Great Value (fresas, moras
+  azules, frambuesas y zarzamoras). Si no es la mezcla, son solo fresas o solo
+  moras. **NUNCA escribas "arándano" ni "arándanos" en `alimentos`**: ninguna
+  versión los trae; lo que parece arándano son moras azules (blueberries)
 
 **Azúcar**
 - `azucar_alta` aplica con: azúcar industrial, refrescos, postres, cajeta, cocoa
