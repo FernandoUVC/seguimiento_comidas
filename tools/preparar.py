@@ -14,7 +14,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 # --- Configuracion -----------------------------------------------------------
 
@@ -68,6 +68,7 @@ def leer_fecha_exif(ruta):
 def reducir(origen, destino):
     """Genera una copia con ANCHO_MAX de ancho, conservando proporcion."""
     with Image.open(origen) as im:
+        im = ImageOps.exif_transpose(im)
         im = im.convert("RGB")
         if im.width > ANCHO_MAX:
             alto = int(im.height * ANCHO_MAX / im.width)
